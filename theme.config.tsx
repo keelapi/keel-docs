@@ -1,5 +1,5 @@
 const themeConfig = {
-  docsRepositoryBase: 'https://github.com/your-org/keel-docs/tree/main',
+  docsRepositoryBase: 'https://github.com/keelapi/keel-docs',
   sidebar: {
     defaultMenuCollapseLevel: 1
   },
@@ -10,7 +10,9 @@ const themeConfig = {
   feedback: {
     content: null
   },
-  editLink: null
+  editLink: {
+    content: 'Edit this page on GitHub'
+  }
 }
 
 export default themeConfig
