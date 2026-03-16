@@ -19,10 +19,7 @@ const meta = {
     title: 'Beta Scope',
     display: 'hidden'
   },
-  'api-reference': {
-    title: 'API Reference',
-    type: 'doc'
-  },
+  'api-reference': 'API Reference',
   permits: 'Permits',
   executions: 'Executions',
   execute: 'Execute',
