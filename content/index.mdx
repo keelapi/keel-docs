@@ -1,0 +1,44 @@
+---
+title: Home
+description: Keel is a permit-driven governance and execution control layer in front of provider APIs.
+---
+
+import { Cards } from 'nextra/components'
+
+# Keel Docs
+
+Keel is a permit-driven governance and execution control layer in front of provider APIs. It gives teams a single place to enforce decisioning, routing, budget controls, and auditability before AI traffic reaches a model provider.
+
+<Cards>
+  <Cards.Card title="Overview" href="/docs/overview">
+    Understand what Keel is, where it sits in the stack, and the runtime surface it exposes today.
+  </Cards.Card>
+  <Cards.Card title="Quickstart" href="/docs/quickstart">
+    Bring up the backend locally, mint a project key, and send one governed request through Keel.
+  </Cards.Card>
+  <Cards.Card title="Architecture" href="/docs/architecture">
+    Review the execution modes, shared pipeline, and persisted lifecycle model behind the product.
+  </Cards.Card>
+  <Cards.Card title="Security" href="/docs/security">
+    Read the current security posture, isolation model, request-freshness controls, and prompt-firewall limits.
+  </Cards.Card>
+</Cards>
+
+## What Keel covers
+
+- permit decisions before provider dispatch
+- provider-neutral and provider-native execution paths
+- routing, fallback, and budget controls
+- prompt inspection on supported execution routes
+- persisted audit records, timelines, and compliance exports
+
+## Recommended path
+
+1. Read [Overview](/docs/overview) to understand the product boundary.
+2. Run [Quickstart](/docs/quickstart) to get a governed request through the stack.
+3. Use [Architecture](/docs/architecture) to understand the execution surfaces and shared runtime.
+4. Review [Security](/docs/security) before production rollout.
+
+## API reference
+
+The API reference section is a placeholder for the later OpenAPI integration. For now, use the authored pages in this site plus the backend repository docs as the source of truth for current behavior.

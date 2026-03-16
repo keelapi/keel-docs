@@ -1,0 +1,103 @@
+---
+title: Quickstart
+description: Prepare a local environment, start Keel, send one governed request, and inspect the result.
+---
+
+# Quickstart
+
+Use this page as the main onboarding path: prepare a local environment, start Keel, send one governed request, and inspect the result.
+
+## 1. Prerequisites
+
+You need:
+
+- the `keel-api` repo checked out locally
+- Python 3
+
+## 2. Clone the repo
+
+If you already have the repo locally, skip this step.
+
+```bash
+git clone https://github.com/sftimeless/keel-api.git keel-api
+cd keel-api
+```
+
+## 3. Install dependencies
+
+Run this in your active virtual environment:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+## 4. Start Keel locally
+
+```bash
+./scripts/dev_up.sh
+```
+
+This startup path:
+
+- initializes the local database
+- seeds a demo project
+- mints a project API key
+- prints a ready-to-run `curl` request
+
+By default, it also enables the local demo OpenAI adapter, so you can get a governed response without configuring a real OpenAI or Anthropic key.
+
+## 5. Send the first governed request
+
+`./scripts/dev_up.sh` prints this command for you. If you want to run it directly, use the API key from the startup output:
+
+```bash
+curl -i -sS http://127.0.0.1:8000/v1/proxy/openai \
+  -H "Authorization: Bearer <api_key_from_dev_up>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: quickstart-demo-001" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      {"role": "user", "content": "Reply in one sentence: why did Keel allow this request?"}
+    ],
+    "max_tokens": 80
+  }'
+```
+
+This route is an official public proxy surface. It is used here only as the fastest demo path to a governed response.
+
+## 6. Confirm the governed response
+
+Run the request with `-i` so the response headers are printed. Look for headers like these:
+
+```text
+x-keel-decision: allow
+x-keel-firewall-result: passed
+x-keel-permit-id: ...
+x-keel-provider: openai
+x-keel-model: gpt-4o-mini
+```
+
+If you see `x-keel-decision` and `x-keel-permit-id`, you have sent a governed AI request through Keel.
+
+## 7. Understand what happened
+
+```text
+request -> permit evaluation -> firewall -> routing -> provider execution -> usage recording
+```
+
+This demo path uses proxy execution because it gives you a full governed response in one round trip.
+
+If you want the permit-first flow after this:
+
+1. call `POST /v1/permits`
+2. inspect the decision
+3. execute the provider request in your application if the decision is `allow`
+4. report usage with `POST /v1/permits/{permit_id}/usage`
+
+## 8. Where to go next
+
+- [Overview](/docs/overview)
+- [Architecture](/docs/architecture)
+- [Security](/docs/security)
+- [API reference placeholder](/docs/api-reference)

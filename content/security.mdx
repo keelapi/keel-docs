@@ -1,0 +1,69 @@
+---
+title: Security
+description: Security posture summary for the active Keel beta surfaces.
+---
+
+# Security
+
+This page is the one-page security posture summary for the active beta surfaces.
+
+## Tenant isolation
+
+Keel's primary runtime isolation boundary is the project. Public runtime routes authenticate into a project and read or persist permits, governed requests, usage rows, governance events, and provider credentials within that project scope. The execution auth stage also rejects mismatched project context before the shared pipeline continues.
+
+Today, this is a project-scoped isolation model, not a claim of stronger cross-system isolation guarantees than the code implements.
+
+## Auth and request freshness
+
+Public runtime access uses project API keys. API keys are stored hashed, with current HMAC-based hashing and a legacy migration path still present in code.
+
+Request freshness is enforced through `X-Keel-Timestamp` and `X-Keel-Nonce`. Keel rejects missing or stale freshness headers and stores nonces to prevent reuse within the configured replay window.
+
+Operator and dashboard routes use separate auth surfaces and should not be treated as equivalent to public runtime authentication.
+
+## Provider key handling
+
+Runtime callers do not provide raw provider keys on governed public execution paths. Keel resolves project-scoped provider credentials server-side and keeps raw secrets out of the shared execution context.
+
+Provider credentials are encrypted at rest using the configured provider-key encryption key ring. The dispatch stage holds the raw provider key only long enough to build the provider request.
+
+## Outbound policy and egress restrictions
+
+Keel applies an application-layer outbound policy to provider, Supabase JWKS, Stripe, and governed webhook destinations.
+
+Current controls include:
+
+- HTTPS-only URLs
+- host allow-lists by outbound category
+- rejection of userinfo in URLs
+- DNS resolution checks that reject loopback, private, link-local, multicast, and other blocked or reserved address space
+- redirects disabled on the validated paths documented by the threat model
+- structured security events for blocked outbound attempts
+
+This reduces SSRF and unsafe-egress exposure for Keel-controlled outbound paths. It is not a substitute for network-layer egress controls.
+
+## Prompt Firewall scope and limits
+
+Prompt Firewall V1 is a route-dependent inspection layer, not a universal content-security boundary. It applies on supported prompt-bearing execution paths and can deny requests for explicit secret-like patterns, prompt-injection phrases, prompt-exfiltration phrases, and selected risky URL or filename cases.
+
+It does not run on canonical permit-only requests. Coverage is narrower than all payload shapes and all providers.
+
+## Accounting and audit expectations
+
+Keel's audit posture relies on persisted evidence rather than request logs alone. Relevant records include:
+
+- permits
+- governed request rows
+- usage ledger events
+- usage logs
+- governance events
+- async job and callback records
+- realtime-session scaffolding where used internally
+
+Timeline replay reads these persisted tables; it is not a separate event-store product.
+
+## Current narrow claims
+
+- no public realtime session API is documented because none is mounted
+- no broad prompt-firewall guarantee is made beyond supported execution routes
+- no claim is made that all outbound asset fetching is Keel-controlled
