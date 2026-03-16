@@ -1,0 +1,66 @@
+---
+title: Safe Retries
+description: Use idempotency keys so retry logic does not create duplicate governed requests.
+---
+
+# Safe Retries
+
+Use a stable idempotency key whenever your client, queue worker, or webhook handler might retry the same request. Keel will replay the original decision or execution result instead of treating the retry as new work.
+
+## Permit example
+
+```python
+import requests
+
+response = requests.post(
+    "https://api.keelapi.com/v1/permits",
+    headers={
+        "Authorization": "Bearer keel_sk_your_key_here",
+        "Content-Type": "application/json",
+    },
+    json={
+        "project_id": "<project_uuid>",
+        "idempotency_key": "invoice-summary-2026-001",
+        "subject": {"type": "job", "id": "job_9001"},
+        "action": {"name": "ai.generate.summary"},
+        "resource": {
+            "type": "request",
+            "id": "req_retry_001",
+            "attributes": {
+                "provider": "openai",
+                "model": "gpt-4o-mini",
+                "operation": "generate.text",
+                "modality": "text",
+                "execution_mode": "sync",
+                "estimated_input_tokens": 320,
+                "estimated_output_tokens": 120,
+                "max_output_tokens_requested": 160,
+            },
+        },
+    },
+)
+
+print(response.json())
+```
+
+## Execution example
+
+```bash
+curl -sS https://api.keelapi.com/v1/executions \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: invoice-summary-2026-001" \
+  -d '{
+    "operation": "generate.text",
+    "messages": [
+      {"role": "user", "content": "Summarize invoice INV-2026-001 for finance review."}
+    ],
+    "routing": {
+      "provider": "openai",
+      "model": "gpt-4o-mini"
+    },
+    "parameters": {
+      "max_output_tokens": 120
+    }
+  }'
+```

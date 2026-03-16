@@ -1,120 +1,88 @@
 ---
 title: Architecture
-description: Runtime modes, key components, shared pipeline, and beta doctrine for Keel.
+description: Concept, request flow, and API surfaces behind the Keel runtime.
 ---
 
 # Architecture
 
-Keel is implemented as a permit-driven governance layer with provider-neutral and provider-specific execution surfaces plus persisted lifecycle state.
+Keel is a permit-driven architecture. Every public route either returns a governance decision, executes a request under governance, or closes the loop with usage and audit data.
 
-## Runtime modes
+## Concept
 
-| Mode | Public surface | What Keel owns |
+The runtime is organized around one shared idea: Keel should evaluate the request before a provider call leaves your system.
+
+That design gives you:
+
+- one place to enforce policy and budget controls
+- consistent routing metadata across providers
+- durable permit, execution, and usage records
+- a clearer separation between client intent and provider-specific payloads
+
+The main public modes are:
+
+| Mode | Primary route | What Keel owns |
 | --- | --- | --- |
-| Permit-first | `POST /v1/permits` then `POST /v1/permits/{permit_id}/usage` | decision, audit row, final usage closeout |
-| Provider-neutral execution | `POST /v1/executions` | decision, routing, execution, usage, assets, request state |
-| Unified execute | `POST /v1/execute` | resolved provider and model selection, decision, execution, usage, assets, request state |
-| Provider-specific proxy | `POST /v1/proxy/*` | decision, execution, usage, assets, request state |
-| Async jobs | `POST /v1/jobs` and `GET /v1/jobs/{job_id}` | job state, background execution, callbacks, usage, assets |
-| Realtime session scaffolding | no public route yet | session persistence, usage metrics, execution events |
+| Permit-first | `POST /v1/permits` | Decision, permit persistence, and later usage closeout |
+| Provider-neutral execution | `POST /v1/executions` | Decision, routing, execution, and normalized output |
+| Provider-shaped execution | `POST /v1/execute` | Resolved target, execution, and normalized output |
+| Provider-native proxy | `POST /v1/proxy/*` | Policy enforcement with provider-specific payload parity |
 
-## Key components
-
-| Component | Responsibility |
-| --- | --- |
-| Permit canonicalization | Normalizes compatibility payloads into the canonical permit shape. |
-| Permit evaluation | Applies policy, pricing, budget guardrails, idempotency, and permit persistence. |
-| Capability registry | Tracks operation-aware capabilities, execution modes, and routing fitness. |
-| Routing | Resolves provider-bound selection, fallback state, and routing metadata. |
-| Prompt Firewall | Inspects supported prompt-bearing execution paths before dispatch. |
-| Execution spine | Runs the shared stage machinery used by governed execution routes. |
-| Async jobs | Persists job state and background callback behavior. |
-| Timeline replay | Reconstructs request chronology from persisted lifecycle tables. |
-| Provider adapters | Translate provider-specific request and response behavior. |
-
-## Architecture diagram
+## Flow
 
 ```mermaid
-flowchart LR
-  Caller["Caller"] --> Route["Permit / Executions / Proxy / Jobs Route"]
-  Route --> Auth["Auth + request context"]
-  Auth --> Normalize["Normalize estimates + preflight pricing"]
-  Normalize --> PermitBuild["Permit request build"]
-  PermitBuild --> Firewall["Prompt Firewall (supported routes only)"]
-  Firewall --> Routing["Routing resolution + permit persistence"]
-  Routing --> PreDispatch["Rate limit / route-specific pre-dispatch checks"]
-  PreDispatch --> Exec["Dispatch via provider adapter"]
-  Exec --> Reconcile["Usage + model reconciliation"]
-  Reconcile --> Ledger["Ledger + usage persistence"]
-  Ledger --> Emit["Governance and lifecycle events"]
-  Exec --> Provider["Provider API"]
-  Routing --> DB["Permits / governed requests"]
-  Ledger --> DB
-  Emit --> DB
-  Exec --> Events["Execution events / jobs / sessions / usage logs"]
-  Events --> DB
-  DB --> Timeline["Request timeline replay"]
+graph TD
+A[Client] --> B[Permit Check]
+B --> C[Execution Engine]
+C --> D[Model Provider]
+D --> E[Usage And Audit Records]
 ```
 
-Permit evaluation is not a separate pre-routing step in the shared stage chain. The pipeline builds the permit request first, then performs prompt-firewall evaluation where present, then resolves routing and persists the permit inside the routing stage.
+At runtime, the shared flow is:
 
-## Current architecture story
+1. authenticate the project API key
+2. normalize request details into Keel's governed model
+3. evaluate permit policy and execution constraints
+4. resolve provider and model routing when execution is requested
+5. dispatch through the provider adapter
+6. persist usage, routing, and audit state
 
-- Permit evaluation remains the canonical public governance seam.
-- Keel exposes active public execution routes in addition to provider-specific proxy routes.
-- Provider-native proxy routes still matter because payloads, translation, and streaming semantics differ materially by provider.
-- The capability registry is operation-aware and execution-mode aware.
-- Execution can persist asset summaries and multi-meter usage even when permit-time cost estimation is still token-priced.
-- Request timeline replay is built from existing persisted lifecycle rows; it is not a separate event-store product.
+The execution routes differ in request shape, but they converge on the same governance pipeline. See [Execution Spine](/execution-spine) for the lower-level stage machinery and [Platform Surfaces](/platform-surfaces) for the route matrix.
 
-## API surface hierarchy
+## API
 
-- Canonical public:
-  - `POST /v1/permits`
-- Official public:
-  - `POST /v1/execute`
-  - `POST /v1/executions`
-  - `POST /v1/permits/{permit_id}/usage`
-  - `POST /v1/proxy/*`
-  - `POST /v1/jobs`
-  - `GET /v1/jobs/{job_id}`
-  - `GET /v1/requests/{request_id}/timeline`
-- Compatibility:
-  - older path-bound permit create and OpenAI alias routes
-- Internal/operator:
-  - dashboard observability and gateway helpers
-- Removed:
-  - `POST /v1/generate`
+These are the routes most developers will touch first:
 
-See [Platform Surfaces](/platform-surfaces) for the mounted route matrix and [Execution Spine](/execution-spine) for the shared stage machinery.
+- `POST /v1/permits` for a decision-first flow
+- `POST /v1/executions` for a canonical provider-neutral execution request
+- `POST /v1/execute` for a provider-shaped request with normalized output
+- `POST /v1/proxy/*` for provider-native payloads
 
-## Beta doctrine
+Example:
 
-The current release gate is defined by a small set of non-negotiable invariants:
+```bash
+curl -sS https://api.keelapi.com/v1/execute \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: architecture-demo-001" \
+  -d '{
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "input": {
+      "messages": [
+        {"role": "user", "content": "Describe the Keel request flow in one sentence."}
+      ],
+      "max_tokens": 80
+    }
+  }'
+```
 
-- one canonical governed execution spine
-- service-layer enforcement of security-critical rules
-- fail-closed behavior on indeterminate governance state
-- strict tenant isolation
-- durable terminal accounting
-- explicit policy validation
-- consistent guarantees across adapters
-
-The full doctrine lives on [Beta Scope](/beta-scope).
-
-## Current limits
-
-- no public realtime session API
-- no autonomous routing claim
-- no standalone event store behind timelines
+Keel resolves the request target, applies the same policy and routing checks used by the rest of the platform, executes the provider call, and returns a normalized execution envelope.
 
 ## Next reading
 
-- [Overview](/overview)
-- [What is Keel](/what-is-keel)
-- [System Overview](/system-overview)
-- [Execution Spine](/execution-spine)
-- [Platform Surfaces](/platform-surfaces)
 - [Quickstart](/quickstart)
-- [Threat Model](/threat-model)
+- [Permits](/permits)
+- [Executions](/executions)
+- [Execute](/execute)
+- [Execution Spine](/execution-spine)
 - [Security](/security)

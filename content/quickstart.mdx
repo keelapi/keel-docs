@@ -1,103 +1,84 @@
 ---
 title: Quickstart
-description: Prepare a local environment, start Keel, send one governed request, and inspect the result.
+description: Get your first permit decision and governed model execution in three steps.
 ---
 
 # Quickstart
 
-Use this page as the main onboarding path: prepare a local environment, start Keel, send one governed request, and inspect the result.
+Get your first permit decision in 60 seconds
 
-## 1. Prerequisites
+This quickstart shows the shortest 3-step path through the live Keel API using copy-paste-friendly requests.
 
-You need:
+## 1. Create an API key
 
-- the `keel-api` repo checked out locally
-- Python 3
+Create a project API key in Keel, then use it in the standard Bearer header:
 
-## 2. Clone the repo
-
-If you already have the repo locally, skip this step.
-
-```bash
-git clone https://github.com/sftimeless/keel-api.git keel-api
-cd keel-api
+```text
+Authorization: Bearer keel_sk_your_key_here
 ```
 
-## 3. Install dependencies
-
-Run this in your active virtual environment:
+## 2. Send a permit request
 
 ```bash
-pip install -r requirements-dev.txt
-```
-
-## 4. Start Keel locally
-
-```bash
-./scripts/dev_up.sh
-```
-
-This startup path:
-
-- initializes the local database
-- seeds a demo project
-- mints a project API key
-- prints a ready-to-run `curl` request
-
-By default, it also enables the local demo OpenAI adapter, so you can get a governed response without configuring a real OpenAI or Anthropic key.
-
-## 5. Send the first governed request
-
-`./scripts/dev_up.sh` prints this command for you. If you want to run it directly, use the API key from the startup output:
-
-```bash
-curl -i -sS http://127.0.0.1:8000/v1/proxy/openai \
-  -H "Authorization: Bearer <api_key_from_dev_up>" \
+curl -sS https://api.keelapi.com/v1/permits \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: quickstart-demo-001" \
   -d '{
-    "model": "gpt-4o-mini",
-    "messages": [
-      {"role": "user", "content": "Reply in one sentence: why did Keel allow this request?"}
-    ],
-    "max_tokens": 80
+    "project_id": "<project_uuid>",
+    "idempotency_key": "quickstart-permit-001",
+    "subject": {
+      "type": "user",
+      "id": "usr_demo"
+    },
+    "action": {
+      "name": "ai.generate.summary"
+    },
+    "resource": {
+      "type": "request",
+      "id": "req_quickstart_001",
+      "attributes": {
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "operation": "generate.text",
+        "modality": "text",
+        "execution_mode": "sync",
+        "estimated_input_tokens": 120,
+        "estimated_output_tokens": 80,
+        "max_output_tokens_requested": 120
+      }
+    }
   }'
 ```
 
-This route is an official public proxy surface. It is used here only as the fastest demo path to a governed response.
+Look for a decision like `allow` and keep the returned permit metadata for audit and usage reporting.
 
-## 6. Confirm the governed response
+## 3. Execute a model
 
-Run the request with `-i` so the response headers are printed. Look for headers like these:
-
-```text
-x-keel-decision: allow
-x-keel-firewall-result: passed
-x-keel-permit-id: ...
-x-keel-provider: openai
-x-keel-model: gpt-4o-mini
+```bash
+curl -sS https://api.keelapi.com/v1/executions \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: quickstart-exec-001" \
+  -d '{
+    "operation": "generate.text",
+    "messages": [
+      {"role": "user", "content": "Summarize why Keel evaluated this request first."}
+    ],
+    "routing": {
+      "provider": "openai",
+      "model": "gpt-4o-mini"
+    },
+    "parameters": {
+      "max_output_tokens": 80
+    }
+  }'
 ```
 
-If you see `x-keel-decision` and `x-keel-permit-id`, you have sent a governed AI request through Keel.
+That request gives you a governed model response plus routing, usage, and permit metadata in one API call.
 
-## 7. Understand what happened
+## Next steps
 
-```text
-request -> permit evaluation -> firewall -> routing -> provider execution -> usage recording
-```
-
-This demo path uses proxy execution because it gives you a full governed response in one round trip.
-
-If you want the permit-first flow after this:
-
-1. call `POST /v1/permits`
-2. inspect the decision
-3. execute the provider request in your application if the decision is `allow`
-4. report usage with `POST /v1/permits/{permit_id}/usage`
-
-## 8. Where to go next
-
-- [Overview](/overview)
-- [Architecture](/architecture)
-- [Security](/security)
-- [API Reference](/api-reference)
+- [Permits](/permits) for the decision-first contract
+- [Executions](/executions) for the canonical execution route
+- [Recipes](/recipes/guard-model-usage) for common rollout patterns
+- [Architecture](/architecture) for the runtime model

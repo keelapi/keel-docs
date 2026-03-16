@@ -1,0 +1,68 @@
+---
+title: Provider Routing
+description: Pin a preferred provider while keeping the request shape portable.
+---
+
+# Provider Routing
+
+Use provider routing when you want a canonical request shape but still need to steer traffic to a specific provider or model family for latency, cost, or regional reasons.
+
+## Permit example
+
+Record the requested target in the permit so the decision and audit record reflect intent:
+
+```json
+{
+  "project_id": "<project_uuid>",
+  "idempotency_key": "recipe-routing-001",
+  "subject": {
+    "type": "service",
+    "id": "svc_router"
+  },
+  "action": {
+    "name": "ai.generate.summary"
+  },
+  "resource": {
+    "type": "request",
+    "id": "req_route_001",
+    "attributes": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "operation": "generate.text",
+      "modality": "text",
+      "execution_mode": "sync",
+      "estimated_input_tokens": 220,
+      "estimated_output_tokens": 140,
+      "max_output_tokens_requested": 180,
+      "routing": {
+        "priority": "cheap",
+        "task_type": "summarization",
+        "fallback_chain": []
+      }
+    }
+  }
+}
+```
+
+## Execution example
+
+```bash
+curl -sS https://api.keelapi.com/v1/executions \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: recipe-routing-exec-001" \
+  -d '{
+    "operation": "generate.text",
+    "messages": [
+      {"role": "user", "content": "Summarize the release note in three bullets."}
+    ],
+    "routing": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "allow_cross_provider_fallback": false
+    },
+    "parameters": {
+      "max_output_tokens": 120
+    }
+  }'
+```

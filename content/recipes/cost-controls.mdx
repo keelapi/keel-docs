@@ -1,0 +1,74 @@
+---
+title: Cost Controls
+description: Keep spend predictable by declaring token estimates before execution.
+---
+
+# Cost Controls
+
+Use Keel's permit-first flow when you want a budget-aware gate before the provider call happens. The request estimate becomes part of the decision record, which makes budget policies and later review easier to reason about.
+
+## Permit example
+
+```bash
+curl -sS https://api.keelapi.com/v1/permits \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": "<project_uuid>",
+    "idempotency_key": "recipe-cost-001",
+    "subject": {
+      "type": "team",
+      "id": "finance_ops"
+    },
+    "action": {
+      "name": "ai.generate.report"
+    },
+    "resource": {
+      "type": "request",
+      "id": "req_cost_001",
+      "attributes": {
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "operation": "generate.text",
+        "modality": "text",
+        "execution_mode": "sync",
+        "estimated_input_tokens": 1200,
+        "estimated_output_tokens": 300,
+        "max_output_tokens_requested": 320
+      }
+    }
+  }'
+```
+
+## Execution example
+
+Once the permit is allowed, execute with the same model target and a bounded output size:
+
+```js
+const response = await fetch('https://api.keelapi.com/v1/executions', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer keel_sk_your_key_here',
+    'Content-Type': 'application/json',
+    'Idempotency-Key': 'recipe-cost-exec-001'
+  },
+  body: JSON.stringify({
+    operation: 'generate.text',
+    messages: [
+      {
+        role: 'user',
+        content: 'Create a concise weekly cost-control summary for the support team.'
+      }
+    ],
+    routing: {
+      provider: 'openai',
+      model: 'gpt-4o-mini'
+    },
+    parameters: {
+      max_output_tokens: 160
+    }
+  })
+})
+
+console.log(await response.json())
+```

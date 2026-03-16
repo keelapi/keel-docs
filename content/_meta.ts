@@ -9,6 +9,9 @@ const meta = {
   overview: 'Overview',
   'why-keel': 'Why Keel',
   quickstart: 'Quickstart',
+  recipes: {
+    title: 'Recipes'
+  },
   architecture: 'Architecture',
   'execution-spine': 'Execution Spine',
   'system-overview': 'System Overview',

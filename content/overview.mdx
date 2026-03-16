@@ -1,48 +1,67 @@
 ---
 title: Overview
-description: High-level map of the Keel docs and the first pages to read.
+description: Concept, request flow, and API entry points for Keel.
 ---
 
 # Overview
 
-Use this page as the map for the first Keel docs now imported into this shell. The goal is to keep the site minimal while making the product boundary, architecture, and security story easier to navigate.
+Keel sits between your application and model providers so you can make policy decisions, route requests, and keep an audit trail without rebuilding those controls in every service.
 
-## Start here
+## Concept
 
-- [What is Keel](/what-is-keel) defines the product boundary, the active public surfaces, and the current claims.
-- [Quickstart](/quickstart) is still the fastest path to a governed request through a local Keel stack.
-- [Architecture](/architecture) explains the runtime modes, shared pipeline, and architectural invariants behind the public routes.
+Keel gives developers two primary integration patterns:
 
-## Product boundary
+- permit-first checks with `POST /v1/permits`
+- managed execution with `POST /v1/executions`, `POST /v1/execute`, or `POST /v1/proxy/*`
 
-- [What is Keel](/what-is-keel)
-- [System Overview](/system-overview)
-- [Platform Surfaces](/platform-surfaces)
+Use permit-first when your application wants the decision and will execute the provider call itself. Use the execution routes when Keel should enforce policy and call the provider in the same request path.
 
-## Runtime and architecture
+## Flow
 
-- [Architecture](/architecture)
-- [Execution Spine](/execution-spine)
-- [Beta Scope](/beta-scope)
+```mermaid
+graph TD
+A[Client] --> B[Permit Check]
+B --> C[Execution Engine]
+C --> D[Model Provider]
+```
 
-## Security and reference
+Every governed request follows the same broad sequence:
 
-- [Threat Model](/threat-model)
-- [Security](/security)
-- [API Reference](/api-reference)
+1. Your application sends context about the request.
+2. Keel evaluates policy, budgets, and routing constraints.
+3. Keel either returns a permit decision or executes the provider request.
+4. Keel records the decision, routing result, and final usage for later review.
 
-## Current document set
+## API
 
-This imported set is intentionally selective:
+For the fastest end-to-end integration, start with the provider-neutral execution route:
 
-- the current Nextra shell and routes stay intact
-- sidebar ordering stays flat and predictable
-- higher-value product and architecture pages land first
-- API docs can grow incrementally before the OpenAPI-backed reference is added
+```bash
+curl -sS https://api.keelapi.com/v1/executions \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: overview-demo-001" \
+  -d '{
+    "operation": "generate.text",
+    "messages": [
+      {"role": "user", "content": "Explain what Keel does before a model call."}
+    ],
+    "routing": {
+      "provider": "openai",
+      "model": "gpt-4o-mini"
+    },
+    "parameters": {
+      "max_output_tokens": 80
+    }
+  }'
+```
 
-## Suggested reading flow
+If you want to decide in your app before executing a model call, start with [Permits](/permits). If you want Keel to own execution, go next to [Executions](/executions) or [Execute](/execute).
 
-1. Read [What is Keel](/what-is-keel).
-2. Skim [System Overview](/system-overview) and [Platform Surfaces](/platform-surfaces).
-3. Go deeper with [Architecture](/architecture) and [Execution Spine](/execution-spine).
-4. Finish with [Threat Model](/threat-model), [Security](/security), and the current [API Reference](/api-reference).
+## Reading path
+
+- [What is Keel](/what-is-keel) for product boundaries and claims
+- [Quickstart](/quickstart) for the fastest first integration
+- [Recipes](/recipes/guard-model-usage) for common implementation patterns
+- [Architecture](/architecture) for the runtime model
+- [Security](/security) and [Threat Model](/threat-model) for rollout planning

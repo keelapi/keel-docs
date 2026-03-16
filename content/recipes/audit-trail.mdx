@@ -1,0 +1,74 @@
+---
+title: Audit Trail
+description: Capture a clear decision and execution record for sensitive AI workflows.
+---
+
+# Audit Trail
+
+Use this pattern when you need a durable record of who asked for a model action, what policy decision Keel made, and how the final execution ran. It fits regulated reviews, internal approvals, and customer-support workflows.
+
+## Permit example
+
+```json
+{
+  "project_id": "<project_uuid>",
+  "idempotency_key": "recipe-audit-001",
+  "subject": {
+    "type": "agent",
+    "id": "csr_128"
+  },
+  "action": {
+    "name": "ai.generate.reply"
+  },
+  "resource": {
+    "type": "request",
+    "id": "req_audit_001",
+    "attributes": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "operation": "generate.text",
+      "modality": "text",
+      "execution_mode": "sync",
+      "estimated_input_tokens": 260,
+      "estimated_output_tokens": 180,
+      "max_output_tokens_requested": 220
+    }
+  },
+  "context": {
+    "user_agent": "support-dashboard"
+  }
+}
+```
+
+## Execution example
+
+```python
+import requests
+
+response = requests.post(
+    "https://api.keelapi.com/v1/executions",
+    headers={
+        "Authorization": "Bearer keel_sk_your_key_here",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "recipe-audit-exec-001",
+    },
+    json={
+        "operation": "generate.text",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Draft a careful customer reply with the next action item.",
+            }
+        ],
+        "routing": {
+            "provider": "openai",
+            "model": "gpt-4o-mini",
+        },
+        "parameters": {
+            "max_output_tokens": 180,
+        },
+    },
+)
+
+print(response.json())
+```

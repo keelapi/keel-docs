@@ -108,7 +108,7 @@ Compatibility note:
 - it does not apply provider-bound routing fitness or fallback attempts
 - it does not replace `POST /v1/executions`, `POST /v1/execute`, or the provider-specific proxy routes
 
-## Examples
+## API example
 
 ### curl
 
@@ -119,8 +119,8 @@ curl -sS -X POST https://api.keelapi.com/v1/permits \
   -d '{
     "project_id": "<project_uuid>",
     "idempotency_key": "permit-demo-001",
-    "subject": {"type": "user", "id": "usr_123", "attributes": {}},
-    "action": {"name": "ai.generate.summary", "attributes": {}},
+    "subject": {"type": "user", "id": "usr_123"},
+    "action": {"name": "ai.generate.summary"},
     "resource": {
       "type": "request",
       "id": "req_123",
@@ -132,16 +132,13 @@ curl -sS -X POST https://api.keelapi.com/v1/permits \
         "execution_mode": "sync",
         "estimated_input_tokens": 200,
         "estimated_output_tokens": 250,
-        "max_output_tokens_requested": 300,
-        "routing": {
-          "priority": "quality",
-          "task_type": "summarization",
-          "fallback_chain": []
-        }
+        "max_output_tokens_requested": 300
       }
     }
   }'
 ```
+
+You can also test this request interactively in the Keel playground at [play.keelapi.com](https://play.keelapi.com). [Open in Playground](https://play.keelapi.com)
 
 ### JavaScript
 
@@ -157,12 +154,10 @@ const response = await fetch('https://api.keelapi.com/v1/permits', {
     idempotency_key: 'permit-demo-001',
     subject: {
       type: 'user',
-      id: 'usr_123',
-      attributes: {}
+      id: 'usr_123'
     },
     action: {
-      name: 'ai.generate.summary',
-      attributes: {}
+      name: 'ai.generate.summary'
     },
     resource: {
       type: 'request',
@@ -202,11 +197,9 @@ response = requests.post(
         "subject": {
             "type": "user",
             "id": "usr_123",
-            "attributes": {},
         },
         "action": {
             "name": "ai.generate.summary",
-            "attributes": {},
         },
         "resource": {
             "type": "request",
