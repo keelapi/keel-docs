@@ -1,5 +1,20 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Public Artifact Sync
+
+The docs site reads public truth artifacts copied into [`data/`](/Users/cmunoz/Desktop/Business/Keel/Product/keel-docs/data). Run [`scripts/sync-public-artifacts.sh`](/Users/cmunoz/Desktop/Business/Keel/Product/keel-docs/scripts/sync-public-artifacts.sh) after generating fresh artifacts in the sibling `keel-api` repository so the docs build against the latest snapshots.
+
+Basic workflow:
+
+```bash
+# in ../keel-api
+# generate docs/public-artifacts/*
+
+# in keel-docs
+./scripts/sync-public-artifacts.sh
+npm run build
+```
+
 ## Getting Started
 
 First, run the development server:

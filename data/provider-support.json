@@ -1,0 +1,92 @@
+{
+  "artifact": "provider-support",
+  "version": 1,
+  "providers": [
+    {
+      "provider": "anthropic",
+      "public_surfaces": [
+        "execute",
+        "executions",
+        "proxy"
+      ],
+      "proxy_path": "/v1/proxy/anthropic",
+      "executions_operations": [
+        "generate.text"
+      ],
+      "proxy_routing_supported": true,
+      "proxy_streaming_supported": false,
+      "notes": "Public proxy support is currently non-stream text messages only. Public cross-provider fallback is limited to the implemented OpenAI and Anthropic text subset."
+    },
+    {
+      "provider": "google",
+      "public_surfaces": [
+        "execute",
+        "executions",
+        "proxy"
+      ],
+      "proxy_path": "/v1/proxy/google",
+      "executions_operations": [
+        "generate.text",
+        "embed.text",
+        "understand.image",
+        "transcribe.audio"
+      ],
+      "proxy_routing_supported": false,
+      "proxy_streaming_supported": false,
+      "notes": "The proxy route currently exposes a non-stream text plus image-understanding subset. /v1/executions additionally supports embed.text and transcribe.audio."
+    },
+    {
+      "provider": "meta",
+      "public_surfaces": [
+        "execute",
+        "executions",
+        "proxy"
+      ],
+      "proxy_path": "/v1/proxy/meta",
+      "executions_operations": [
+        "generate.text",
+        "embed.text",
+        "understand.image"
+      ],
+      "proxy_routing_supported": false,
+      "proxy_streaming_supported": false,
+      "notes": "Current public proxy support is non-stream text plus image-understanding. metadata.adapter_mode selects native, compatible, or byo."
+    },
+    {
+      "provider": "openai",
+      "public_surfaces": [
+        "execute",
+        "executions",
+        "proxy"
+      ],
+      "proxy_path": "/v1/proxy/openai",
+      "executions_operations": [
+        "generate.text",
+        "embed.text",
+        "understand.image",
+        "generate.image",
+        "edit.image",
+        "generate.audio",
+        "transcribe.audio"
+      ],
+      "proxy_routing_supported": true,
+      "proxy_streaming_supported": true,
+      "notes": "Broadest public coverage. Only current public proxy route with route-specific streaming and the only current public streaming path on /v1/executions."
+    },
+    {
+      "provider": "xai",
+      "public_surfaces": [
+        "execute",
+        "executions",
+        "proxy"
+      ],
+      "proxy_path": "/v1/proxy/xai",
+      "executions_operations": [
+        "generate.text"
+      ],
+      "proxy_routing_supported": false,
+      "proxy_streaming_supported": false,
+      "notes": "Current public support is non-stream text or chat only."
+    }
+  ]
+}

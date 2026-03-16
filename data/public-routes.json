@@ -1,0 +1,606 @@
+{
+  "artifact": "public-routes",
+  "version": 1,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "none",
+      "summary": "Health check",
+      "deprecated": false,
+      "notes": "Basic service health check."
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "none",
+      "summary": "Healthz",
+      "deprecated": false,
+      "notes": "Health check with request id echo."
+    },
+    {
+      "method": "GET",
+      "path": "/readyz",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "none",
+      "summary": "Readyz",
+      "deprecated": false,
+      "notes": "Root-level readiness probe."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/logout",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "dashboard_session",
+      "summary": "Logout Dashboard Session",
+      "deprecated": false,
+      "notes": "Revoke the current dashboard session."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/auth/supabase/exchange",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Exchange Supabase Token For Keel Session",
+      "deprecated": false,
+      "notes": "Exchange a user JWT for a Keel dashboard session token."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/billing/checkout",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Create billing checkout session",
+      "deprecated": false,
+      "notes": "Create a Stripe checkout session for project billing."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/billing/stripe/webhook",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "stripe_signature",
+      "summary": "Ingest Stripe billing webhook",
+      "deprecated": false,
+      "notes": "Stripe billing webhook ingestion endpoint."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/compliance/exports",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "List compliance exports",
+      "deprecated": false,
+      "notes": "List compliance exports for the authenticated project."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/compliance/exports",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Create compliance export",
+      "deprecated": false,
+      "notes": "Create a compliance export for the authenticated project."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/compliance/exports/{export_id}",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Get compliance export",
+      "deprecated": false,
+      "notes": "Fetch one compliance export record."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/execute",
+      "family": "execution",
+      "exposure": "official",
+      "auth": "client_project_api_key",
+      "summary": "Execute provider request",
+      "deprecated": false,
+      "notes": "Unified execution route that accepts provider-shaped input."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/executions",
+      "family": "execution",
+      "exposure": "official",
+      "auth": "client_project_api_key",
+      "summary": "Create execution",
+      "deprecated": false,
+      "notes": "Provider-neutral execution route with the public canonical request shape."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/executions/{request_id}",
+      "family": "execution",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Get execution timeline",
+      "deprecated": false,
+      "notes": "Read-only execution inspector for the authenticated project."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/governance/events",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "List governance events",
+      "deprecated": false,
+      "notes": "List governance events visible to the authenticated project."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/governance/events/stream",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Stream governance events",
+      "deprecated": false,
+      "notes": "SSE governance event stream for the authenticated project."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/governance/events/{event_id}",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Get governance event",
+      "deprecated": false,
+      "notes": "Fetch one governance event."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/governance/subscriptions",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "List governance subscriptions",
+      "deprecated": false,
+      "notes": "List governance event subscriptions."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/governance/subscriptions",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Create governance subscription",
+      "deprecated": false,
+      "notes": "Create a governance event subscription."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/governance/subscriptions/{subscription_id}",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Delete governance subscription",
+      "deprecated": false,
+      "notes": "Delete a governance event subscription."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/health",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "project_api_key",
+      "summary": "V1 health check",
+      "deprecated": false,
+      "notes": "Authenticated project health check."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/jobs",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Submit async job",
+      "deprecated": false,
+      "notes": "Submit an async execution job."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/jobs/{job_id}",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Get async job",
+      "deprecated": false,
+      "notes": "Fetch async job status and result state."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/metrics/executions",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Get execution metrics",
+      "deprecated": false,
+      "notes": "Request-level execution metrics for the authenticated project."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/permits",
+      "family": "decision",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "List permits",
+      "deprecated": false,
+      "notes": "Project-scoped permit audit listing."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/permits",
+      "family": "decision",
+      "exposure": "canonical",
+      "auth": "project_api_key",
+      "summary": "Create permit",
+      "deprecated": false,
+      "notes": "Canonical provider-agnostic permit decision contract."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/permits/export",
+      "family": "decision",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Export permits",
+      "deprecated": false,
+      "notes": "Export permit audit history for the authenticated project."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/permits/{permit_id}",
+      "family": "decision",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Get permit",
+      "deprecated": false,
+      "notes": "Read back one permit audit record."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/permits/{permit_id}/usage",
+      "family": "decision",
+      "exposure": "official",
+      "auth": "project_api_key_admin_scope",
+      "summary": "Report permit usage",
+      "deprecated": false,
+      "notes": "Report final usage for permit-first callers."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/policies",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "List policies",
+      "deprecated": false,
+      "notes": "List org- or project-scoped policies accessible to the caller."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/policies",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Create policy",
+      "deprecated": false,
+      "notes": "Create an org- or project-scoped policy."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/policies/{policy_id}",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Delete policy",
+      "deprecated": false,
+      "notes": "Delete an existing policy."
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/policies/{policy_id}",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Patch policy",
+      "deprecated": false,
+      "notes": "Patch an existing policy."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "List projects",
+      "deprecated": false,
+      "notes": "List projects owned by the caller."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/projects",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Create project",
+      "deprecated": false,
+      "notes": "Create a project owned by the caller."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects/{project_id}/api-keys",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "List project API keys",
+      "deprecated": false,
+      "notes": "List runtime API keys for a project."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/projects/{project_id}/api-keys",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Create project API key",
+      "deprecated": false,
+      "notes": "Create a runtime API key for a project."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/projects/{project_id}/api-keys/{key_id}/revoke",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Revoke project API key",
+      "deprecated": false,
+      "notes": "Revoke a runtime API key for a project."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects/{project_id}/cost-forecast",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Get project cost forecast",
+      "deprecated": false,
+      "notes": "Forecasted project spend based on recorded usage."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/projects/{project_id}/keys",
+      "family": "management",
+      "exposure": "compatibility",
+      "auth": "user_jwt",
+      "summary": "Mint project API key",
+      "deprecated": true,
+      "notes": "Deprecated project API-key mint alias."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects/{project_id}/permits",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "List project permits",
+      "deprecated": false,
+      "notes": "List permit records for a project the caller owns."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/projects/{project_id}/permits",
+      "family": "decision",
+      "exposure": "compatibility",
+      "auth": "project_api_key",
+      "summary": "Create project permit",
+      "deprecated": true,
+      "notes": "Deprecated path-bound permit create alias."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects/{project_id}/policy",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Get project policy",
+      "deprecated": false,
+      "notes": "Read project-scoped policy overrides."
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/projects/{project_id}/policy",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Update project policy",
+      "deprecated": false,
+      "notes": "Update project-scoped policy overrides."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects/{project_id}/prompt-analytics",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Get project prompt analytics",
+      "deprecated": false,
+      "notes": "Project prompt analytics rollup."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects/{project_id}/providers",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "List project provider keys",
+      "deprecated": false,
+      "notes": "List configured provider-key status for the project."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/projects/{project_id}/providers/{provider}/key",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Delete project provider key",
+      "deprecated": false,
+      "notes": "Delete a project provider key."
+    },
+    {
+      "method": "PUT",
+      "path": "/v1/projects/{project_id}/providers/{provider}/key",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Set project provider key",
+      "deprecated": false,
+      "notes": "Set or rotate a project provider key."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/projects/{project_id}/providers/{provider}/test",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Test project provider key",
+      "deprecated": false,
+      "notes": "Test the currently configured project provider key."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects/{project_id}/usage",
+      "family": "management",
+      "exposure": "adjacent",
+      "auth": "user_jwt",
+      "summary": "Get project usage summary",
+      "deprecated": false,
+      "notes": "Project usage summary for the selected billing window."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/providers/diagnostics/public",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "none",
+      "summary": "Get public provider diagnostics",
+      "deprecated": false,
+      "notes": "Public provider diagnostics summary."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/providers/health/public",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "none",
+      "summary": "Get public provider health",
+      "deprecated": false,
+      "notes": "Public provider-health summary."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/proxy/anthropic",
+      "family": "execution",
+      "exposure": "official",
+      "auth": "client_project_api_key",
+      "summary": "Proxy Anthropic",
+      "deprecated": false,
+      "notes": "Provider-native Anthropic proxy route."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/proxy/google",
+      "family": "execution",
+      "exposure": "official",
+      "auth": "client_project_api_key",
+      "summary": "Proxy Google",
+      "deprecated": false,
+      "notes": "Provider-native Google proxy route."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/proxy/meta",
+      "family": "execution",
+      "exposure": "official",
+      "auth": "client_project_api_key",
+      "summary": "Proxy Meta",
+      "deprecated": false,
+      "notes": "Provider-native Meta proxy route."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/proxy/openai",
+      "family": "execution",
+      "exposure": "official",
+      "auth": "client_project_api_key",
+      "summary": "Proxy Openai",
+      "deprecated": false,
+      "notes": "Provider-native OpenAI proxy route."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/proxy/xai",
+      "family": "execution",
+      "exposure": "official",
+      "auth": "client_project_api_key",
+      "summary": "Proxy Xai",
+      "deprecated": false,
+      "notes": "Provider-native xAI proxy route."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/ready",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "none",
+      "summary": "Readiness check",
+      "deprecated": false,
+      "notes": "Readiness endpoint for deployment probes."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/requests/{request_id}/timeline",
+      "family": "lifecycle",
+      "exposure": "official",
+      "auth": "project_api_key",
+      "summary": "Get request timeline",
+      "deprecated": false,
+      "notes": "Normalized lifecycle replay for a governed request."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/system/status",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "none",
+      "summary": "Get system status",
+      "deprecated": false,
+      "notes": "System readiness summary without private implementation detail exposure."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/version",
+      "family": "status",
+      "exposure": "adjacent",
+      "auth": "none",
+      "summary": "Get version",
+      "deprecated": false,
+      "notes": "Backend version metadata."
+    }
+  ]
+}
