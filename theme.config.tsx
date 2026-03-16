@@ -1,3 +1,5 @@
+export const docsPageMetaEditLinkText = 'Edit this page on GitHub'
+
 const themeConfig = {
   docsRepositoryBase: 'https://github.com/keelapi/keel-docs/tree/main',
   gitTimestamp: true,
@@ -20,7 +22,7 @@ const themeConfig = {
   feedback: {
     content: null
   },
-  editLink: 'Edit this page on GitHub'
+  editLink: null
 }
 
 export default themeConfig

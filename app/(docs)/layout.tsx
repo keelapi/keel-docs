@@ -1,7 +1,7 @@
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
 import { getPageMap } from 'nextra/page-map'
 import { DocsPageMeta } from '../../components/docs-page-meta'
-import themeConfig from '../../theme.config'
+import themeConfig, { docsPageMetaEditLinkText } from '../../theme.config'
 
 export default async function DocsLayout({
   children
@@ -47,7 +47,7 @@ export default async function DocsLayout({
         themeConfig.gitTimestamp ? (
           <DocsPageMeta
             docsRepositoryBase={themeConfig.docsRepositoryBase}
-            editLinkText={themeConfig.editLink}
+            editLinkText={docsPageMetaEditLinkText}
           />
         ) : undefined
       }
