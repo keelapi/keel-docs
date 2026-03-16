@@ -6,19 +6,20 @@ const meta = {
       breadcrumb: false
     }
   },
+  overviewSection: {
+    type: 'separator',
+    title: 'Overview'
+  },
   overview: 'Overview',
   'why-keel': 'Why Keel',
   quickstart: 'Quickstart',
-  guides: {
-    type: 'separator',
-    title: 'Guides'
-  },
+  'what-is-keel': 'What Is Keel',
   recipes: {
     title: 'Recipes'
   },
-  concepts: {
+  architectureSection: {
     type: 'separator',
-    title: 'System / Concepts'
+    title: 'Architecture'
   },
   architecture: 'Architecture',
   'system-overview': 'System Overview',
@@ -41,11 +42,6 @@ const meta = {
   'proxy-execution': 'Proxy Execution',
   idempotency: 'Idempotency',
   errors: 'Errors',
-  more: {
-    type: 'separator',
-    title: 'More'
-  },
-  'what-is-keel': 'What is Keel',
   'beta-scope': {
     title: 'Beta Scope',
     display: 'hidden'

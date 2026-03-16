@@ -17,7 +17,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 }
 
 function supportSymbol(value: boolean): string {
-  return value ? 'Yes' : 'No'
+  return value ? '✓' : '✗'
 }
 
 function getProviderLabel(provider: string): string {
@@ -76,23 +76,23 @@ export async function ProviderSupportTable() {
         ) : null}
         .
       </p>
-      <div className="x:overflow-x-auto x:rounded-2xl x:border x:border-slate-200 x:bg-white/80 x:shadow-sm x:shadow-slate-950/5 x:backdrop-blur x:dark:border-slate-800 x:dark:bg-slate-950/60">
-        <table className="x:min-w-full x:border-separate x:border-spacing-0">
+      <div className="x:overflow-x-auto">
+        <table className="x:min-w-full x:border-collapse x:text-sm">
           <caption className="x:sr-only">
             Provider support matrix generated from the backend artifact.
           </caption>
           <thead>
-            <tr className="x:bg-slate-900/[0.03] x:text-left x:dark:bg-slate-100/[0.04]">
-              <th className="x:px-5 x:py-3.5 x:text-xs x:font-semibold x:uppercase x:tracking-[0.14em] x:text-slate-500 x:dark:text-slate-400">
+            <tr className="x:border-b x:border-slate-200 x:text-left x:dark:border-slate-800">
+              <th className="x:px-3 x:py-2.5 x:text-xs x:font-semibold x:uppercase x:tracking-[0.08em] x:text-slate-500 x:dark:text-slate-400">
                 Provider
               </th>
-              <th className="x:px-5 x:py-3.5 x:text-center x:text-xs x:font-semibold x:uppercase x:tracking-[0.14em] x:text-slate-500 x:dark:text-slate-400">
+              <th className="x:px-3 x:py-2.5 x:text-center x:text-xs x:font-semibold x:uppercase x:tracking-[0.08em] x:text-slate-500 x:dark:text-slate-400">
                 Proxy
               </th>
-              <th className="x:px-5 x:py-3.5 x:text-center x:text-xs x:font-semibold x:uppercase x:tracking-[0.14em] x:text-slate-500 x:dark:text-slate-400">
+              <th className="x:px-3 x:py-2.5 x:text-center x:text-xs x:font-semibold x:uppercase x:tracking-[0.08em] x:text-slate-500 x:dark:text-slate-400">
                 Executions
               </th>
-              <th className="x:px-5 x:py-3.5 x:text-center x:text-xs x:font-semibold x:uppercase x:tracking-[0.14em] x:text-slate-500 x:dark:text-slate-400">
+              <th className="x:px-3 x:py-2.5 x:text-center x:text-xs x:font-semibold x:uppercase x:tracking-[0.08em] x:text-slate-500 x:dark:text-slate-400">
                 Streaming
               </th>
             </tr>
@@ -101,39 +101,35 @@ export async function ProviderSupportTable() {
             {artifact.providers.map(provider => (
               <tr
                 key={provider.provider}
-                className="x:align-middle x:[&:not(:last-child)>*]:border-b x:[&:not(:last-child)>*]:border-slate-200 x:[&:not(:last-child)>*]:dark:border-slate-800"
+                className="x:border-b x:border-slate-200 x:last:border-b-0 x:dark:border-slate-800"
               >
-                <th scope="row" className="x:px-5 x:py-4 x:font-normal">
-                  <span className="x:inline-flex x:items-center x:gap-3">
+                <th scope="row" className="x:px-3 x:py-3 x:font-normal">
+                  <span className="x:inline-flex x:items-center x:gap-2.5">
                     {PROVIDER_LOGOS[provider.provider] ? (
                       <img
                         src={PROVIDER_LOGOS[provider.provider]}
                         alt=""
                         aria-hidden="true"
-                        width={18}
-                        height={18}
+                        width={16}
+                        height={16}
                         style={{
                           display: 'block',
                           flexShrink: 0
                         }}
                       />
                     ) : null}
-                    <span className="x:text-sm x:font-semibold x:text-slate-900 x:dark:text-slate-50">
+                    <span className="x:text-sm x:font-medium x:text-slate-900 x:dark:text-slate-50">
                       {getProviderLabel(provider.provider)}
                     </span>
                   </span>
                 </th>
                 {[provider.proxySupported, provider.executionsSupported, provider.streamingSupported].map(
                   (value, index) => (
-                    <td key={`${provider.provider}-${index}`} className="x:px-5 x:py-4 x:text-center">
-                      <span
-                        className={[
-                          'x:inline-flex x:min-w-14 x:justify-center x:rounded-full x:border x:px-3 x:py-1.5 x:text-xs x:font-semibold',
-                          value
-                            ? 'x:border-emerald-200 x:bg-emerald-500/10 x:text-emerald-700 x:dark:border-emerald-500/30 x:dark:bg-emerald-500/15 x:dark:text-emerald-300'
-                            : 'x:border-slate-200 x:bg-slate-900/[0.03] x:text-slate-500 x:dark:border-slate-700 x:dark:bg-slate-100/[0.04] x:dark:text-slate-300'
-                        ].join(' ')}
-                      >
+                    <td
+                      key={`${provider.provider}-${index}`}
+                      className="x:px-3 x:py-3 x:text-center x:text-base x:text-slate-700 x:dark:text-slate-200"
+                    >
+                      <span aria-label={value ? 'supported' : 'not supported'}>
                         {supportSymbol(value)}
                       </span>
                     </td>
@@ -145,39 +141,39 @@ export async function ProviderSupportTable() {
         </table>
       </div>
       {notedProviders.length > 0 ? (
-        <section className="x:mt-8 x:space-y-4">
-          <h2>Provider Notes</h2>
-          <div className="x:grid x:gap-4">
+        <section className="x:mt-6 x:space-y-4">
+          <h2>Notes</h2>
+          <dl className="x:space-y-4">
             {notedProviders.map(provider => (
-              <article
+              <div
                 key={`${provider.provider}-notes`}
-                className="x:rounded-2xl x:border x:border-slate-200 x:bg-slate-50/75 x:p-5 x:shadow-sm x:shadow-slate-950/5 x:dark:border-slate-800 x:dark:bg-slate-900/50"
+                className="x:grid x:gap-1 sm:x:grid-cols-[12rem_minmax(0,1fr)] sm:x:gap-4"
               >
-                <div className="x:flex x:flex-col x:gap-3">
-                  <h3 className="x:m-0 x:text-base x:font-semibold x:text-slate-900 x:dark:text-slate-50">
-                    {getProviderLabel(provider.provider)}
-                  </h3>
-                  {provider.notes ? (
-                    <p className="x:m-0 x:text-sm x:leading-6 x:text-slate-600 x:dark:text-slate-300">
-                      {provider.notes}
+                <dt className="x:text-sm x:font-semibold x:text-slate-900 x:dark:text-slate-50">
+                  {getProviderLabel(provider.provider)}
+                </dt>
+                <dd className="x:m-0 x:space-y-1.5 x:text-sm x:leading-6 x:text-slate-600 x:dark:text-slate-300">
+                  {provider.notes ? <p className="x:m-0">{provider.notes}</p> : null}
+                  {provider.supportedOperations.length > 0 ? (
+                    <p className="x:m-0">
+                      <span className="x:font-medium x:text-slate-900 x:dark:text-slate-100">
+                        Supported operations:
+                      </span>{' '}
+                      <code>{provider.supportedOperations.join(', ')}</code>
                     </p>
                   ) : null}
-                  {provider.supportedOperations.length > 0 ? (
-                    <div className="x:flex x:flex-wrap x:gap-2">
-                      {provider.supportedOperations.map(operation => (
-                        <code
-                          key={`${provider.provider}-${operation}`}
-                          className="x:rounded-full x:border x:border-slate-200 x:bg-white x:px-2.5 x:py-1 x:text-xs x:text-slate-700 x:dark:border-slate-700 x:dark:bg-slate-950 x:dark:text-slate-200"
-                        >
-                          {operation}
-                        </code>
-                      ))}
-                    </div>
+                  {provider.unsupportedOperations.length > 0 ? (
+                    <p className="x:m-0">
+                      <span className="x:font-medium x:text-slate-900 x:dark:text-slate-100">
+                        Unsupported operations:
+                      </span>{' '}
+                      <code>{provider.unsupportedOperations.join(', ')}</code>
+                    </p>
                   ) : null}
-                </div>
-              </article>
+                </dd>
+              </div>
             ))}
-          </div>
+          </dl>
         </section>
       ) : null}
     </>
