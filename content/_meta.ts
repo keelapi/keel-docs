@@ -19,7 +19,6 @@ const meta = {
     title: 'Beta Scope',
     display: 'hidden'
   },
-  'api-reference': 'API Reference',
   permits: 'Permits',
   executions: 'Executions',
   execute: 'Execute',
