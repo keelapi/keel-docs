@@ -101,11 +101,13 @@ The route uses the shared execution pipeline:
 
 The HTTP response also includes Keel headers such as `x-keel-permit-id`, `x-keel-decision`, `x-keel-provider`, `x-keel-model`, `x-keel-routing-reason`, and `x-keel-firewall-result`.
 
-## Example
+## Examples
+
+### curl
 
 ```bash
-curl -i -sS http://127.0.0.1:8000/v1/execute \
-  -H "Authorization: Bearer <client_project_api_key>" \
+curl -i -sS https://api.keelapi.com/v1/execute \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: exec-001" \
   -d '{
@@ -118,6 +120,65 @@ curl -i -sS http://127.0.0.1:8000/v1/execute \
       "max_tokens": 80
     }
   }'
+```
+
+### JavaScript
+
+```js
+const response = await fetch('https://api.keelapi.com/v1/execute', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer keel_sk_your_key_here',
+    'Content-Type': 'application/json',
+    'Idempotency-Key': 'exec-001'
+  },
+  body: JSON.stringify({
+    provider: 'openai',
+    model: 'gpt-4o-mini',
+    input: {
+      messages: [
+        {
+          role: 'user',
+          content: 'Summarize governed execution in one sentence.'
+        }
+      ],
+      max_tokens: 80
+    }
+  })
+})
+
+const data = await response.json()
+console.log(data)
+```
+
+### Python
+
+```python
+import requests
+
+response = requests.post(
+    "https://api.keelapi.com/v1/execute",
+    headers={
+        "Authorization": "Bearer keel_sk_your_key_here",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "exec-001",
+    },
+    json={
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "input": {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Summarize governed execution in one sentence.",
+                }
+            ],
+            "max_tokens": 80,
+        },
+    },
+)
+
+print(response.json())
 ```
 
 ## Choose `/v1/execute` vs `/v1/executions`

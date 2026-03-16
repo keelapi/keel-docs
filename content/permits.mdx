@@ -108,11 +108,13 @@ Compatibility note:
 - it does not apply provider-bound routing fitness or fallback attempts
 - it does not replace `POST /v1/executions`, `POST /v1/execute`, or the provider-specific proxy routes
 
-## Example
+## Examples
+
+### curl
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8000/v1/permits \
-  -H "Authorization: Bearer <project_api_key>" \
+curl -sS -X POST https://api.keelapi.com/v1/permits \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "<project_uuid>",
@@ -139,6 +141,91 @@ curl -sS -X POST http://127.0.0.1:8000/v1/permits \
       }
     }
   }'
+```
+
+### JavaScript
+
+```js
+const response = await fetch('https://api.keelapi.com/v1/permits', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer keel_sk_your_key_here',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    project_id: '<project_uuid>',
+    idempotency_key: 'permit-demo-001',
+    subject: {
+      type: 'user',
+      id: 'usr_123',
+      attributes: {}
+    },
+    action: {
+      name: 'ai.generate.summary',
+      attributes: {}
+    },
+    resource: {
+      type: 'request',
+      id: 'req_123',
+      attributes: {
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        operation: 'generate.text',
+        modality: 'text',
+        execution_mode: 'sync',
+        estimated_input_tokens: 200,
+        estimated_output_tokens: 250,
+        max_output_tokens_requested: 300
+      }
+    }
+  })
+})
+
+const data = await response.json()
+console.log(data)
+```
+
+### Python
+
+```python
+import requests
+
+response = requests.post(
+    "https://api.keelapi.com/v1/permits",
+    headers={
+        "Authorization": "Bearer keel_sk_your_key_here",
+        "Content-Type": "application/json",
+    },
+    json={
+        "project_id": "<project_uuid>",
+        "idempotency_key": "permit-demo-001",
+        "subject": {
+            "type": "user",
+            "id": "usr_123",
+            "attributes": {},
+        },
+        "action": {
+            "name": "ai.generate.summary",
+            "attributes": {},
+        },
+        "resource": {
+            "type": "request",
+            "id": "req_123",
+            "attributes": {
+                "provider": "openai",
+                "model": "gpt-4o-mini",
+                "operation": "generate.text",
+                "modality": "text",
+                "execution_mode": "sync",
+                "estimated_input_tokens": 200,
+                "estimated_output_tokens": 250,
+                "max_output_tokens_requested": 300,
+            },
+        },
+    },
+)
+
+print(response.json())
 ```
 
 ## Response shape
