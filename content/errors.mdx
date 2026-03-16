@@ -1,0 +1,77 @@
+---
+title: Errors
+description: Stable minimum error contracts across Keel's public runtime surfaces.
+---
+
+# Errors
+
+Stable minimums to depend on across Keel's public runtime surfaces:
+
+- HTTP status code
+- `error.code`
+- `error.message`
+
+Do not assume a single universal error envelope across permit, execution, proxy, gateway, and dashboard helper routes beyond those minimums.
+
+## Common permit errors
+
+- `400 invalid_request`
+- `401 unauthorized`
+- `403 forbidden`
+- `403 insufficient_scope`
+- `404 not_found`
+- `409 conflict`
+- `500 internal_error`
+
+## Common execution and proxy errors
+
+- `unauthorized`
+- `insufficient_scope`
+- `provider_key_not_configured`
+- `idempotency_conflict` or `conflict`
+- `prompt_firewall_blocked`
+
+Cost-governor execution denials also include machine-readable detail in `error.details`.
+
+## Cost-governor denial codes
+
+- `daily_budget_exceeded`
+- `monthly_budget_exceeded`
+- `request_cost_exceeded`
+- `pricing_not_configured`
+
+## Budget guardrail denial codes
+
+- `budget_guardrail_daily_spike_exceeded`
+- `budget_guardrail_monthly_threshold_exceeded`
+- `budget_guardrail_rate_exceeded`
+- `budget_guardrail_rate_throttled`
+
+`budget_guardrail_rate_throttled` is returned as HTTP `429` on execution surfaces. The other guardrail denials are returned as HTTP `403`.
+
+## Routing budget enforcement codes
+
+- `budget_exceeded`
+- `budget_threshold_missing`
+- `pricing_not_configured`
+- `token_estimation_unavailable`
+- `budget_estimation_unavailable`
+
+`POST /v1/execute` can return these when alias-based routing budget enforcement is active and Keel must fail closed before selecting a target.
+
+## Prompt Firewall denials
+
+On prompt-carrying execution routes, Prompt Firewall V1 uses:
+
+- `error.code = prompt_firewall_blocked`
+
+and includes matched-rule metadata in `error.details`.
+
+## Related pages
+
+- [API Reference](/docs/api-reference)
+- [Permits](/docs/permits)
+- [Executions](/docs/executions)
+- [Execute](/docs/execute)
+- [Proxy Execution](/docs/proxy-execution)
+- [Security](/docs/security)

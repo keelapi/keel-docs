@@ -1,0 +1,63 @@
+---
+title: Idempotency
+description: Retry and replay semantics across Keel's public decision and execution surfaces.
+---
+
+# Idempotency
+
+Keel documents idempotency separately for the canonical permit flow and the execution routes.
+
+## Permit idempotency
+
+Route:
+
+- `POST /v1/permits`
+
+Canonical field:
+
+- `idempotency_key` in the JSON body
+
+Behavior:
+
+- scope is per project
+- same key plus the same semantic payload replays the prior permit response
+- same key plus a different semantic payload returns `409 conflict`
+- if the client omits `idempotency_key`, Keel currently generates and persists a new `idem_<uuid>` value
+
+## Execution idempotency
+
+Routes:
+
+- `POST /v1/proxy/openai`
+- `POST /v1/proxy/anthropic`
+- `POST /v1/proxy/google`
+- `POST /v1/proxy/xai`
+- `POST /v1/proxy/meta`
+- `POST /v1/executions`
+- `POST /v1/execute`
+
+Canonical field:
+
+- `Idempotency-Key` HTTP header
+
+Behavior:
+
+- scope is project plus execution route
+- same key plus the same semantic payload replays the cached response
+- same key plus a different semantic payload returns `409 conflict`
+- if the client omits `Idempotency-Key`, the request still runs, but retries are treated as new executions
+
+## Why the fields differ
+
+`POST /v1/permits` is Keel's canonical decision contract, so its idempotency field is part of the canonical request body.
+
+`POST /v1/proxy/*`, `POST /v1/executions`, and `POST /v1/execute` execute provider work in the request path, so they use a header-based pattern for safe retries and replay protection.
+
+## Related pages
+
+- [API Reference](/docs/api-reference)
+- [Permits](/docs/permits)
+- [Executions](/docs/executions)
+- [Execute](/docs/execute)
+- [Proxy Execution](/docs/proxy-execution)
+- [Errors](/docs/errors)

@@ -1,0 +1,161 @@
+---
+title: Permits
+description: Canonical permit contract for decision-first Keel integrations.
+---
+
+# Permits
+
+Use this API when you want Keel to evaluate a request, persist the decision, and let your application decide what to do next.
+
+## Route summary
+
+| Route | Status | Purpose |
+| --- | --- | --- |
+| `POST /v1/permits` | Canonical public | Evaluate a permit request and persist a permit row. |
+| `GET /v1/permits` | Official public | List permit audit rows. |
+| `GET /v1/permits/{permit_id}` | Official public | Fetch one permit audit row. |
+| `GET /v1/permits/export` | Official public | Export a project audit bundle. |
+| `POST /v1/permits/{permit_id}/usage` | Official public | Report final usage for permit-first callers. |
+| `POST /v1/projects/{project_id}/permits` | Compatibility | Older path-bound permit create flow. |
+
+## Authentication
+
+```text
+Authorization: Bearer <project_api_key>
+```
+
+`X-API-Key` remains accepted for compatibility, but Bearer auth is the documented contract.
+
+## Idempotency
+
+`POST /v1/permits` uses the canonical body field `idempotency_key`.
+
+- same key plus the same semantic permit payload replays the prior permit
+- same key plus a different semantic payload returns `409 conflict`
+- if the client omits the field, Keel currently generates and persists a new `idem_<uuid>` value
+
+That default makes onboarding ergonomic, but retries without a client-supplied key do not get a stable client-controlled replay contract.
+
+## Canonical request shape
+
+```json
+{
+  "project_id": "<project_uuid>",
+  "idempotency_key": "idem_001",
+  "subject": {
+    "type": "user",
+    "id": "usr_123",
+    "attributes": {}
+  },
+  "action": {
+    "name": "ai.generate.summary",
+    "attributes": {}
+  },
+  "resource": {
+    "type": "request",
+    "id": "req_123",
+    "attributes": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "operation": "generate.text",
+      "modality": "text",
+      "execution_mode": "sync",
+      "estimated_input_tokens": 200,
+      "estimated_output_tokens": 250,
+      "max_output_tokens_requested": 300,
+      "inputs": [],
+      "routing": {
+        "priority": "cheap",
+        "task_type": "summarization",
+        "latency_target_ms": 1500,
+        "allow_cross_provider_fallback": false,
+        "fallback_chain": []
+      }
+    }
+  },
+  "context": {
+    "timestamp": "2026-03-09T00:00:00Z",
+    "ip": "127.0.0.1",
+    "user_agent": "curl"
+  }
+}
+```
+
+## `resource.attributes` fields
+
+| Field | Current meaning |
+| --- | --- |
+| `provider`, `model` | Requested provider and model identity. |
+| `operation` | Canonical governed operation such as `generate.text`, `generate.image`, or `transcribe.audio`. |
+| `modality` | Execution context label used by routing, capability metadata, and audit records. |
+| `execution_mode` | `sync`, `async`, or `realtime`. |
+| `estimated_input_tokens`, `estimated_output_tokens` | Current permit-time estimate fields. |
+| `max_output_tokens_requested` | Requested upper bound for generated output. |
+| `inputs` | Declared inputs or assets. |
+| `asset_summary` | Optional asset metadata summary. |
+| `routing` | Optional routing hints and fallback metadata. On `POST /v1/permits` these are recorded, not executed. |
+| `callback_url` | Optional callback target relevant to async execution. |
+
+Compatibility note:
+
+- canonical docs prefer `resource.attributes.*`
+- top-level compatibility aliases for `operation`, `execution_mode`, `callback_url`, and token fields still exist for older clients
+
+## What `POST /v1/permits` does not do
+
+- it does not execute provider work
+- it does not run Prompt Firewall on raw prompt bodies
+- it does not apply provider-bound routing fitness or fallback attempts
+- it does not replace `POST /v1/executions`, `POST /v1/execute`, or the provider-specific proxy routes
+
+## Example
+
+```bash
+curl -sS -X POST http://127.0.0.1:8000/v1/permits \
+  -H "Authorization: Bearer <project_api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": "<project_uuid>",
+    "idempotency_key": "permit-demo-001",
+    "subject": {"type": "user", "id": "usr_123", "attributes": {}},
+    "action": {"name": "ai.generate.summary", "attributes": {}},
+    "resource": {
+      "type": "request",
+      "id": "req_123",
+      "attributes": {
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "operation": "generate.text",
+        "modality": "text",
+        "execution_mode": "sync",
+        "estimated_input_tokens": 200,
+        "estimated_output_tokens": 250,
+        "max_output_tokens_requested": 300,
+        "routing": {
+          "priority": "quality",
+          "task_type": "summarization",
+          "fallback_chain": []
+        }
+      }
+    }
+  }'
+```
+
+## Response shape
+
+Permit responses include:
+
+- `decision`, `reason`, and `actions`
+- `constraints` and `budgets` when permit enforcement produced them
+- `decision_details` for explicit deny or challenge metadata
+- `routing` with requested and selected provider-model metadata plus reason codes
+- `metadata.policy_id`, `metadata.policy_version`, and `metadata.evaluated_at`
+
+## Related pages
+
+- [API Reference](/docs/api-reference)
+- [Executions](/docs/executions)
+- [Execute](/docs/execute)
+- [Proxy Execution](/docs/proxy-execution)
+- [Idempotency](/docs/idempotency)
+- [Errors](/docs/errors)

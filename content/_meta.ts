@@ -22,7 +22,13 @@ const meta = {
   'api-reference': {
     title: 'API Reference',
     type: 'doc'
-  }
+  },
+  permits: 'Permits',
+  executions: 'Executions',
+  execute: 'Execute',
+  'proxy-execution': 'Proxy Execution',
+  idempotency: 'Idempotency',
+  errors: 'Errors'
 }
 
 export default meta

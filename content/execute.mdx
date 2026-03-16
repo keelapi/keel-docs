@@ -1,0 +1,147 @@
+---
+title: Execute
+description: Provider-shaped execution contract with normalized Keel output.
+---
+
+# Execute
+
+Use `POST /v1/execute` when you want Keel to run the normalized execution pipeline against a provider-shaped `input` payload instead of the stricter canonical `/v1/executions` request shape.
+
+This route still returns the normalized execution envelope, but it resolves the concrete provider and model target first and includes a `resolved` block in the response.
+
+## Route summary
+
+| Route | Status | Purpose |
+| --- | --- | --- |
+| `POST /v1/execute` | Official public | Execute a governed request from a provider-shaped `input` object and return the normalized execution envelope plus resolved-target metadata. |
+
+## Authentication and idempotency
+
+```text
+Authorization: Bearer <client_project_api_key>
+Idempotency-Key: exec-001
+```
+
+`/v1/execute` requires a client-scoped project API key.
+
+If `KEEL_REQUIRE_REQUEST_FRESHNESS=true`, `/v1/execute` also requires:
+
+```text
+X-Keel-Timestamp: <unix_epoch_seconds>
+X-Keel-Nonce: <unique_nonce_per_request>
+```
+
+Keel rejects missing headers, stale timestamps, and reused nonces with the same minimal error codes used on the proxy routes.
+
+## Request shape
+
+```json
+{
+  "provider": "openai",
+  "model": "gpt-4o-mini",
+  "input": {
+    "messages": [
+      {"role": "user", "content": "Summarize this request in one sentence."}
+    ],
+    "max_tokens": 80
+  }
+}
+```
+
+| Field | Required? | Notes |
+| --- | --- | --- |
+| `provider` | No | If omitted, Keel tries to resolve the provider from routing policy aliases, model aliases, or a uniquely registered provider for the model. |
+| `model` | Yes | Requested model id or alias. |
+| `input` | Yes | Provider-shaped request payload. Operation and modality are inferred from this payload after provider resolution. |
+
+## Provider and model resolution
+
+Resolution works like this:
+
+1. if `provider` is supplied, Keel uses that provider with the requested `model`
+2. if `provider` is omitted, Keel first tries routing-policy alias resolution
+3. if no routing policy alias matches, Keel tries model-alias resolution
+4. if no alias matches, Keel checks the capability registry for a unique provider that owns that model id
+5. if multiple providers expose the same model id, the caller must specify `provider`
+
+Important current-state details:
+
+- routing-policy resolution can reorder candidates using provider-health ranking and active routing budgets
+- enforce-mode routing budgets fail closed when Keel cannot evaluate the required estimated cost
+- this route does not expose the same public cross-provider fallback contract as `POST /v1/executions`
+
+## What Keel does on this route
+
+The route uses the shared execution pipeline:
+
+1. authenticate the client-scoped project API key
+2. resolve provider and model
+3. infer operation and modality from `input`
+4. estimate inputs and preflight pricing
+5. build the permit request
+6. run Prompt Firewall on supported text-bearing sources for the resolved provider
+7. resolve routing and persist the permit
+8. dispatch through the provider adapter with the project's server-side provider key
+9. reconcile usage and billing
+10. persist ledger and lifecycle records
+11. return the normalized execution envelope
+
+## Response shape
+
+`POST /v1/execute` returns the same normalized execution envelope shape used by `POST /v1/executions`, plus a `resolved` block.
+
+`resolved` contains the final target and any resolution metadata that applied:
+
+- `provider`
+- `model`
+- `alias`
+- `policy`
+- `health`
+- `budget`
+
+The HTTP response also includes Keel headers such as `x-keel-permit-id`, `x-keel-decision`, `x-keel-provider`, `x-keel-model`, `x-keel-routing-reason`, and `x-keel-firewall-result`.
+
+## Example
+
+```bash
+curl -i -sS http://127.0.0.1:8000/v1/execute \
+  -H "Authorization: Bearer <client_project_api_key>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: exec-001" \
+  -d '{
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "input": {
+      "messages": [
+        {"role": "user", "content": "Summarize governed execution in one sentence."}
+      ],
+      "max_tokens": 80
+    }
+  }'
+```
+
+## Choose `/v1/execute` vs `/v1/executions`
+
+| Concern | `/v1/execute` | `/v1/executions` |
+| --- | --- | --- |
+| Request shape | Provider-shaped `input` object | Canonical operation plus `messages` or `inputs` |
+| Provider selection | Optional explicit provider, otherwise resolved from alias or registry | Canonical routing block |
+| Operation selection | Inferred from resolved provider payload | Explicit `operation` |
+| Response shape | Normalized envelope plus `resolved` | Normalized envelope |
+| Best fit | Lower-level integrations that already have provider-shaped payloads | Portable integrations that want the canonical request contract |
+
+## Current limits
+
+- sync only
+- provider-native payload semantics still vary by provider
+- this route does not expose the same public cross-provider fallback interface as `/v1/executions`
+- Prompt Firewall only evaluates text-bearing sources it can extract from the resolved provider payload
+
+## Related pages
+
+- [API Reference](/docs/api-reference)
+- [Executions](/docs/executions)
+- [Permits](/docs/permits)
+- [Proxy Execution](/docs/proxy-execution)
+- [Idempotency](/docs/idempotency)
+- [Errors](/docs/errors)

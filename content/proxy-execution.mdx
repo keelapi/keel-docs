@@ -1,0 +1,98 @@
+---
+title: Proxy Execution
+description: Provider-native execution routes for Keel-managed requests.
+---
+
+# Proxy Execution
+
+Use these routes when Keel should execute the provider request and record usage in the same path.
+
+## Official public proxy routes
+
+| Route | Current exposed behavior |
+| --- | --- |
+| `POST /v1/proxy/openai` | Text generation, OpenAI streaming, image-understanding, `gpt-image-1` generation or edit, audio transcription, and audio generation inferred from payload shape. |
+| `POST /v1/proxy/anthropic` | Non-stream text messages only. |
+| `POST /v1/proxy/google` | Current route shape exposes non-stream text plus an image-understanding subset. |
+| `POST /v1/proxy/xai` | Non-stream text and chat only. |
+| `POST /v1/proxy/meta` | Non-stream text plus an image-understanding subset; `metadata.adapter_mode` selects `native`, `compatible`, or `byo`. |
+
+These routes remain provider-specific. Keel still does not expose a provider-neutral request shape here. Use [`POST /v1/executions`](/docs/executions) when you want one canonical execution contract instead of provider-native payloads and provider-native responses.
+
+## What the proxy path does
+
+- authenticates the caller with a project API key
+- derives operation and modality from the route payload where implemented
+- evaluates a permit before provider dispatch
+- runs Prompt Firewall on supported routes before dispatch
+- enforces execution-time controls such as rate limits and provider-key checks
+- records governance events for permit decisions and completed executions
+- records routing metadata, usage, and request state
+- persists usage metrics and asset summaries where available
+
+## Idempotency on proxy routes
+
+- Keel uses the `Idempotency-Key` header for replay protection on proxy routes
+- same key plus the same payload replays the cached response
+- same key plus a different payload returns `409 idempotency_conflict`
+- if the header is omitted, Keel still executes the request, but retries are treated as new executions
+
+## Prompt Firewall scope on proxy routes
+
+Prompt Firewall currently runs on:
+
+- `POST /v1/proxy/openai`
+- `POST /v1/proxy/anthropic`
+- `POST /v1/proxy/google`
+- `POST /v1/proxy/meta`
+
+It does not currently run on `POST /v1/proxy/xai`.
+
+## Example: OpenAI proxy
+
+```bash
+curl -i -sS http://127.0.0.1:8000/v1/proxy/openai \
+  -H "Authorization: Bearer <client_project_api_key>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: proxy-001" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [
+      {"role": "user", "content": "Summarize this text in one sentence."}
+    ],
+    "max_tokens": 200
+  }'
+```
+
+## `/v1/executions` vs proxy routes
+
+| Concern | `/v1/executions` | `/v1/proxy/*` |
+| --- | --- | --- |
+| Request shape | Canonical, provider-neutral | Provider-native |
+| Response shape | Normalized execution envelope | Provider-native provider response |
+| Best fit | Portable integrations | Provider-specific parity and provider-native payload control |
+| Streaming shape | Keel SSE event stream | Provider-specific streaming semantics |
+
+## Routing boundary
+
+- public routing controls exist only on `/v1/proxy/openai` and `/v1/proxy/anthropic`
+- public cross-provider fallback is explicit, non-stream, and limited to the implemented OpenAI and Anthropic text subset
+- Google, xAI, and Meta proxy routes reject public `routing`
+- OpenAI streaming does not participate in fallback
+
+## Current non-claims
+
+- no claim that proxy routes are provider-neutral
+- no public realtime session API
+- no claim of uniform capability parity across all proxy routes
+- no claim that multimodal or image request-cost estimation is exact before dispatch
+- no claim that remote asset URL validation binds the later provider-side fetch
+
+## Related pages
+
+- [API Reference](/docs/api-reference)
+- [Executions](/docs/executions)
+- [Execute](/docs/execute)
+- [Idempotency](/docs/idempotency)
+- [Errors](/docs/errors)
+- [Platform Surfaces](/docs/platform-surfaces)

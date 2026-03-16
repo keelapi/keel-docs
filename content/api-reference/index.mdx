@@ -1,25 +1,28 @@
 ---
 title: API Reference
-description: Placeholder for the future OpenAPI-backed API reference in the Keel docs site.
+description: Entry point for the first authored developer-facing API docs in this Keel docs shell.
 ---
 
 # API Reference
 
-This section is intentionally a placeholder until the OpenAPI-backed reference is integrated into this Nextra site.
+This section is the entry point for the first authored developer-facing API docs imported into this Nextra shell. It does not replace a generated OpenAPI reference yet, but it now covers the main public execution contracts and the error and retry behavior you need to integrate against them.
+
+## Start here
+
+- [Permits](/docs/permits) for the canonical decision contract
+- [Executions](/docs/executions) for the provider-neutral execution route
+- [Execute](/docs/execute) for the lower-level provider-shaped execution route
+- [Proxy Execution](/docs/proxy-execution) for the provider-native runtime routes
+- [Idempotency](/docs/idempotency) for retry and replay semantics across public surfaces
+- [Errors](/docs/errors) for the stable minimum error contracts
 
 ## Current state
 
 Today, the Keel backend exposes:
 
+- authored API docs in this site for the first public developer-facing routes
 - a FastAPI-generated OpenAPI schema in non-production environments
-- authored documentation in the `../keel-api/docs` source tree
 - public runtime routes under `https://api.keelapi.com`
-
-## What to use for now
-
-- Use [Overview](/docs/overview) for the product boundary and active public surfaces.
-- Use [Quickstart](/docs/quickstart) for the fastest working request path.
-- Use [Architecture](/docs/architecture) and [Security](/docs/security) for the current runtime and control model.
 
 ## Planned follow-up
 
@@ -27,4 +30,4 @@ The next iteration should add:
 
 - generated OpenAPI pages or an embedded reference viewer
 - stable links for `openapi.json` and hosted interactive docs
-- deeper authored API pages for permits, executions, proxy execution, usage reporting, and errors
+- deeper authored API pages for usage reporting and route-specific readback flows

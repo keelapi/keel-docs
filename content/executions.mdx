@@ -1,0 +1,208 @@
+---
+title: Executions
+description: Provider-neutral execution contract for governed Keel requests.
+---
+
+# Executions
+
+Use `POST /v1/executions` when you want Keel to execute a governed request through one public, provider-neutral request shape. You send a canonical operation plus `messages` or `inputs`, Keel evaluates the permit, applies execution-time controls, resolves the provider and model target, executes the request, and returns a normalized execution envelope.
+
+## Route summary
+
+| Route | Status | Purpose |
+| --- | --- | --- |
+| `POST /v1/executions` | Official public | Provider-neutral execution for the currently supported sync and streaming subset. |
+
+## Authentication and idempotency
+
+```text
+Authorization: Bearer <client_project_api_key>
+Idempotency-Key: exec-sync-001
+```
+
+Unlike `POST /v1/permits`, the idempotency key for `/v1/executions` is an HTTP header, not a JSON body field.
+
+- if the header is omitted, Keel still executes the request
+- retries without `Idempotency-Key` are treated as new executions
+
+## Supported public operations
+
+| Operation | Current providers on `/v1/executions` | Notes |
+| --- | --- | --- |
+| `generate.text` | OpenAI, Anthropic, Google, xAI, Meta | Primary text path. |
+| `embed.text` | OpenAI, Google, Meta | Returns `output.embeddings`. |
+| `understand.image` | OpenAI, Google, Meta | Requires `inputs`, including at least one `image`. |
+| `generate.image` | OpenAI | Asset-producing operation. |
+| `edit.image` | OpenAI | Requires `inputs`, including at least one `image`. |
+| `generate.audio` | OpenAI | Text prompt in `messages` or text-only `inputs`. |
+| `transcribe.audio` | OpenAI, Google | Requires `inputs`, including at least one `audio`. |
+
+Not supported on this public route today:
+
+- `generate.video`
+- `understand.video`
+- `run.batch`
+- `run.async`
+- `realtime.session`
+- provider-native tool-calling payloads
+
+## Request shape overview
+
+| Field | Required? | Notes |
+| --- | --- | --- |
+| `operation` | Yes | Canonical capability name such as `generate.text` or `understand.image`. |
+| `mode` | No | `sync` by default. `stream` is the public SSE mode described below. |
+| `messages` | Exactly one of `messages` or `inputs` | Text-only convenience shape. |
+| `inputs` | Exactly one of `messages` or `inputs` | Canonical multimodal shape. |
+| `routing` | No | Provider and model target plus optional routing hints. |
+| `parameters` | No | Portable controls such as `max_output_tokens`, `temperature`, and `top_p`. |
+| `provider_options` | No | Advanced passthrough object keyed by provider name. |
+
+### `messages` vs `inputs`
+
+- provide exactly one of `messages` or `inputs`
+- `messages` is text-only and is the simplest path for chat-style text requests
+- `inputs` is the canonical multimodal shape and is required for image and audio operations
+- `transcribe.audio` requires at least one `audio` input
+
+### `routing`
+
+Keel resolves the initial execution target like this:
+
+1. `routing.provider` and `routing.model`: use that target directly
+2. `routing.provider` only: choose the default public model for that provider and operation
+3. `routing.model` only: infer the provider from Keel's model registry
+4. neither field: choose the default public provider and model for the operation
+
+Important caveats:
+
+- provider-neutral routing does not mean autonomous whole-fleet routing
+- cross-provider fallback is explicit and request-scoped
+- if you want fallback, send `routing.allow_cross_provider_fallback=true` and a concrete `routing.fallback_chain`
+
+### `provider_options`
+
+`provider_options` is for advanced passthrough only.
+
+- keys must be one of `openai`, `anthropic`, `google`, `xai`, or `meta`
+- each provider value must be an object
+- Keel blocks fields that would override the public contract, including `model`, `stream`, `max_tokens`, `max_output_tokens`, `temperature`, and `top_p`
+
+## Response shape overview
+
+Successful sync executions return one normalized envelope:
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Public execution id. |
+| `object` | Always `execution`. |
+| `created_at` | Execution creation timestamp. |
+| `status` | `completed`, `failed`, or `denied`. |
+| `status_code` | Final HTTP status code for the execution result. |
+| `output` | Normalized output. |
+| `output_assets` | Produced asset metadata for asset-producing operations. |
+| `routing` | Requested and selected provider-model metadata plus routing reason. |
+| `governance` | Permit decision summary. |
+| `usage` | Final usage and cost fields plus normalized usage meters. |
+| `timing` | Start, completion, and duration fields. |
+| `error` | Present when the execution failed or was denied. |
+
+The HTTP response also includes Keel headers such as `x-keel-permit-id`, `x-keel-decision`, `x-keel-provider`, `x-keel-model`, `x-keel-routing-reason`, and `x-keel-firewall-result`.
+
+## Sync example
+
+```bash
+curl -i -sS http://127.0.0.1:8000/v1/executions \
+  -H "Authorization: Bearer <client_project_api_key>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: exec-sync-001" \
+  -d '{
+    "operation": "generate.text",
+    "messages": [
+      {"role": "system", "content": "Reply in one sentence."},
+      {"role": "user", "content": "What does Keel do before calling a model?"}
+    ],
+    "routing": {
+      "provider": "openai",
+      "model": "gpt-4o-mini"
+    },
+    "parameters": {
+      "max_output_tokens": 80,
+      "temperature": 0.2
+    }
+  }'
+```
+
+## Streaming example
+
+`mode="stream"` returns Server-Sent Events from the same route.
+
+Current public guidance:
+
+- use `mode="stream"` with the OpenAI text-generation path
+- treat other providers and multimodal operations as sync unless you have verified the exact combination in your deployment
+
+SSE event names currently used by the public route:
+
+- `execution.started`
+- `content.delta`
+- `execution.completed`
+- `execution.denied`
+- `execution.error`
+- `done`
+
+## Multimodal example
+
+Use `inputs` for image and audio operations.
+
+```bash
+curl -i -sS http://127.0.0.1:8000/v1/executions \
+  -H "Authorization: Bearer <client_project_api_key>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: exec-image-001" \
+  -d '{
+    "operation": "understand.image",
+    "inputs": [
+      {
+        "type": "text",
+        "role": "user",
+        "text": "Describe the image in one sentence."
+      },
+      {
+        "type": "image",
+        "role": "user",
+        "asset": {
+          "source": "url",
+          "url": "https://example.com/invoice.png",
+          "mime_type": "image/png"
+        }
+      }
+    ],
+    "routing": {
+      "provider": "openai",
+      "model": "gpt-4o-mini"
+    },
+    "parameters": {
+      "max_output_tokens": 96
+    }
+  }'
+```
+
+## `/v1/executions` vs `/v1/proxy/*`
+
+| Concern | `/v1/executions` | `/v1/proxy/*` |
+| --- | --- | --- |
+| Request shape | Canonical, provider-neutral | Provider-native |
+| Route selection | One route for supported providers and operations | One route per provider |
+| Response shape | Normalized execution envelope | Provider-native response body |
+| Streaming shape | Keel SSE events | Provider-specific streaming semantics |
+| Best fit | Portable integrations and faster onboarding | Existing provider payload parity and provider-specific control |
+
+## Related pages
+
+- [API Reference](/docs/api-reference)
+- [Permits](/docs/permits)
+- [Execute](/docs/execute)
+- [Proxy Execution](/docs/proxy-execution)
+- [Idempotency](/docs/idempotency)
+- [Errors](/docs/errors)
