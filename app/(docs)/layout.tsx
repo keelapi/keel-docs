@@ -7,7 +7,7 @@ export default async function DocsLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const pageMap = await getPageMap('/docs')
+  const pageMap = await getPageMap()
 
   return (
     <Layout
