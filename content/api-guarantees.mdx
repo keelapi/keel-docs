@@ -1,0 +1,97 @@
+---
+title: API Guarantees
+description: What developers can rely on across Keel's current documented public API surface.
+---
+
+# API Guarantees
+
+This page summarizes the practical guarantees Keel documents for the current public API surface. It is intentionally narrow. If a behavior is not documented on the public routes Keel exposes today, do not treat it as guaranteed.
+
+## Stability
+
+Keel's stable public endpoints are not changed silently.
+
+If a change would break an existing integration, Keel should either:
+
+- introduce that break behind an explicit version boundary, or
+- provide a clearly communicated migration path for the affected public route
+
+This is a compatibility expectation for the documented public API surface, not a claim that every internal implementation detail remains fixed.
+
+## Idempotency
+
+Keel exposes idempotency so clients can retry safely when a network call is interrupted or a response is lost.
+
+For permit creation, the canonical idempotency field is `idempotency_key` in the request body. For execution routes, the canonical field is the `Idempotency-Key` header.
+
+For the same project, route, idempotency key, and semantic payload, Keel replays the prior result instead of creating a second governed action. Duplicate retries with the same key should therefore not create duplicate governed actions for that same operation.
+
+If the same key is reused with a different semantic payload, Keel returns a conflict rather than guessing which request the client intended.
+
+For exact route behavior, see [Idempotency](/idempotency).
+
+## Error Contract
+
+Keel uses a stable structured error contract for the current documented public runtime surface.
+
+At minimum, clients should depend on:
+
+- the HTTP status code
+- `error.code`
+- `error.message`
+
+Treat that as the compatibility boundary. Do not assume every route exposes the same optional error fields beyond those documented minimums.
+
+Minimal example:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Missing or invalid API key"
+  }
+}
+```
+
+For route-specific error codes, see [Errors](/errors).
+
+## Authentication Expectations
+
+Public runtime requests use project API keys.
+
+Clients should send a valid project API key on the documented public runtime routes. If the key is missing, invalid, revoked, or otherwise not accepted for the route being called, Keel returns an authentication or authorization error predictably rather than continuing as if the request were valid.
+
+In practice, integrations should treat missing or invalid keys as normal auth failures and handle them separately from retryable transport issues.
+
+## Retry Guidance
+
+Retry behavior should be practical and conservative:
+
+- safe retries depend on using the documented idempotency field for the route you are calling
+- if a request may have reached Keel but the client did not receive a response, retry with the same idempotency key
+- do not rotate the idempotency key for an uncertain retry unless you intend to create a new governed action
+- treat `409 conflict` on reused keys as a signal that the same key was paired with a different semantic request
+
+Without idempotency, retries on execution paths should be treated as new work.
+
+## Trust Boundaries
+
+Keel governs the public AI request surface it documents today, including the public decision and execution routes described in this docs site.
+
+That guarantee should not be stretched beyond the documented supported routes. Internal services, dashboard-only paths, operator tooling, future endpoints, and provider behavior outside Keel's documented request boundary are not covered by this page.
+
+For the conservative security boundary, see [Threat Model](/threat-model) and [Security](/security).
+
+## Current Limits
+
+These guarantees apply to the current documented public surface, not every internal route and not every future route Keel may add later.
+
+If a route is undocumented, internal-only, experimental, or not yet part of the published public API surface, assume it may change without the guarantees described here until it is explicitly documented.
+
+## Related Pages
+
+- [Security](/security)
+- [Threat Model](/threat-model)
+- [Idempotency](/idempotency)
+- [Errors](/errors)
+- [Public API Surface](/api-reference/public-api-surface)

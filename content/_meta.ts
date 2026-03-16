@@ -31,6 +31,7 @@ const meta = {
   },
   security: 'Security',
   'threat-model': 'Threat Model',
+  'api-guarantees': 'API Guarantees',
   apiSection: {
     type: 'separator',
     title: 'API Reference'
