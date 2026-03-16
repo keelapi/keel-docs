@@ -7,7 +7,7 @@ const meta = {
     }
   },
   overview: 'Overview',
-  'what-is-keel': 'What is Keel',
+  'why-keel': 'Why Keel',
   quickstart: 'Quickstart',
   architecture: 'Architecture',
   'execution-spine': 'Execution Spine',
@@ -15,11 +15,12 @@ const meta = {
   'platform-surfaces': 'Platform Surfaces',
   'threat-model': 'Threat Model',
   security: 'Security',
+  'api-reference': 'API Reference',
+  'what-is-keel': 'What is Keel',
   'beta-scope': {
     title: 'Beta Scope',
     display: 'hidden'
   },
-  'api-reference': 'API Reference',
   permits: 'Permits',
   executions: 'Executions',
   execute: 'Execute',
