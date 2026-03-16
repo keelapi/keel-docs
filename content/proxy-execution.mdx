@@ -17,7 +17,7 @@ Use these routes when Keel should execute the provider request and record usage 
 | `POST /v1/proxy/xai` | Non-stream text and chat only. |
 | `POST /v1/proxy/meta` | Non-stream text plus an image-understanding subset; `metadata.adapter_mode` selects `native`, `compatible`, or `byo`. |
 
-These routes remain provider-specific. Keel still does not expose a provider-neutral request shape here. Use [`POST /v1/executions`](/docs/executions) when you want one canonical execution contract instead of provider-native payloads and provider-native responses.
+These routes remain provider-specific. Keel still does not expose a provider-neutral request shape here. Use [`POST /v1/executions`](/executions) when you want one canonical execution contract instead of provider-native payloads and provider-native responses.
 
 ## What the proxy path does
 
@@ -90,9 +90,9 @@ curl -i -sS http://127.0.0.1:8000/v1/proxy/openai \
 
 ## Related pages
 
-- [API Reference](/docs/api-reference)
-- [Executions](/docs/executions)
-- [Execute](/docs/execute)
-- [Idempotency](/docs/idempotency)
-- [Errors](/docs/errors)
-- [Platform Surfaces](/docs/platform-surfaces)
+- [API Reference](/api-reference)
+- [Executions](/executions)
+- [Execute](/execute)
+- [Idempotency](/idempotency)
+- [Errors](/errors)
+- [Platform Surfaces](/platform-surfaces)
