@@ -1,56 +1,48 @@
 ---
 title: Overview
-description: What Keel is, what it owns, and the public runtime surfaces it exposes today.
+description: High-level map of the Keel docs and the first pages to read.
 ---
 
 # Overview
 
-Keel is a permit-driven AI governance layer and control-plane foundation in front of provider APIs.
+Use this page as the map for the first Keel docs now imported into this shell. The goal is to keep the site minimal while making the product boundary, architecture, and security story easier to navigate.
 
-It centralizes the parts of AI integration that usually drift across services:
+## Start here
 
-- permit decisions
-- provider-neutral and provider-specific execution governance
-- routing metadata and fallback history
-- prompt and content inspection on supported execution routes
-- audit persistence and request replay
-- async job orchestration
-- meter-aware usage capture
+- [What is Keel](/docs/what-is-keel) defines the product boundary, the active public surfaces, and the current claims.
+- [Quickstart](/docs/quickstart) is still the fastest path to a governed request through a local Keel stack.
+- [Architecture](/docs/architecture) explains the runtime modes, shared pipeline, and architectural invariants behind the public routes.
 
-Keel is not a model host.
+## Product boundary
 
-## Public surface today
+- [What is Keel](/docs/what-is-keel)
+- [System Overview](/docs/system-overview)
+- [Platform Surfaces](/docs/platform-surfaces)
 
-- Canonical public:
-  - `POST /v1/permits`
-- Official public:
-  - `POST /v1/executions`
-  - `POST /v1/execute`
-  - `POST /v1/permits/{permit_id}/usage`
-  - `POST /v1/proxy/*`
-  - `POST /v1/jobs`
-  - `GET /v1/jobs/{job_id}`
-  - `GET /v1/requests/{request_id}/timeline`
+## Runtime and architecture
 
-## Current scope
+- [Architecture](/docs/architecture)
+- [Execution Spine](/docs/execution-spine)
+- [Beta Scope](/docs/beta-scope)
 
-Keel is implemented today as:
+## Security and reference
 
-- a provider-agnostic decision layer at the permit boundary
-- a provider-neutral and provider-specific execution-governance layer
-- an async and realtime-capable lifecycle foundation with persisted events and timeline replay
+- [Threat Model](/docs/threat-model)
+- [Security](/docs/security)
+- [API Reference](/docs/api-reference)
 
-Realtime session persistence exists internally, but there is no public realtime session API yet.
+## Current document set
 
-## What Keel does not claim
+This imported set is intentionally selective:
 
-- autonomous provider routing
-- broad media understanding in Prompt Firewall
-- meter-native permit-time pricing for every multimodal operation
+- the current Nextra shell and routes stay intact
+- sidebar ordering stays flat and predictable
+- higher-value product and architecture pages land first
+- API reference remains a placeholder until the OpenAPI-backed integration is added
 
-## Where to go next
+## Suggested reading flow
 
-- [Run the quickstart](/docs/quickstart)
-- [Review the system architecture](/docs/architecture)
-- [Read the current security posture](/docs/security)
-- [Check the API reference placeholder](/docs/api-reference)
+1. Read [What is Keel](/docs/what-is-keel).
+2. Skim [System Overview](/docs/system-overview) and [Platform Surfaces](/docs/platform-surfaces).
+3. Go deeper with [Architecture](/docs/architecture) and [Execution Spine](/docs/execution-spine).
+4. Finish with [Threat Model](/docs/threat-model), [Security](/docs/security), and the current [API Reference](/docs/api-reference).

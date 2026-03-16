@@ -1,0 +1,136 @@
+---
+title: Platform Surfaces
+description: Implemented route taxonomy for Keel's mounted runtime and control surfaces.
+---
+
+# Platform Surfaces
+
+This page tracks the implemented route taxonomy for Keel's mounted AI runtime, request lifecycle, compatibility, and operator surfaces.
+
+## Surface taxonomy
+
+Use this page as the mounted-surface map for beta:
+
+- decision surfaces: permit creation and permit readback and audit routes
+- execution surfaces: unified execution, provider-native proxy execution, and async job submission and status
+- lifecycle surfaces: request timeline replay, governance event readback, event streaming, and compliance export flows
+- governance and telemetry surfaces: metrics, provider diagnostics, billing webhook ingestion, and public provider health status
+- management and operator surfaces: project, policy, provider-key, dashboard, organization, and control-plane routes
+
+## Beta support matrix
+
+| Surface family | Beta status | Notes |
+| --- | --- | --- |
+| Permit decision contract | Stable | `POST /v1/permits` remains the canonical public decision seam. |
+| Unified execution | Stable | `POST /v1/execute` and `POST /v1/executions` are active public execution surfaces with different request contracts. |
+| Proxy execution | Limited | Capability coverage differs by provider. Public routing exists only on OpenAI and Anthropic. Public streaming is effectively limited to the current OpenAI path. |
+| Async jobs and lifecycle replay | Stable | Public async job submission, status, and request timeline replay are mounted. |
+| Governance events and compliance exports | Stable | Public project-scoped readback and export surfaces are mounted. |
+| Dashboard and control-plane surfaces | Internal only | Operator- and UI-focused surfaces, not canonical public runtime APIs. |
+| Realtime session transport | Internal only | Persistence scaffolding exists, but there is no public session-start route. |
+
+## Canonical public
+
+| Route | Notes |
+| --- | --- |
+| `POST /v1/permits` | Stable provider-agnostic decision contract. |
+
+## Official public runtime and lifecycle
+
+| Route | Notes |
+| --- | --- |
+| `POST /v1/execute` | Unified execution endpoint backed by the normalized execution pipeline. Accepts provider-shaped `input`, infers operation from payload, returns the normalized execution envelope, and adds a `resolved` block. |
+| `GET /v1/permits` | Permit audit and readback. |
+| `GET /v1/permits/{permit_id}` | Permit audit and readback. |
+| `GET /v1/permits/export` | Project-scoped audit export. |
+| `POST /v1/permits/{permit_id}/usage` | Permit-first usage reporting. Public completed reports still require positive billed cost. |
+| `POST /v1/executions` | Provider-neutral execution route. Supports the current public sync subset plus the current OpenAI streaming path, and returns a normalized execution envelope. |
+| `GET /v1/executions/{request_id}` | Public execution inspector and readback route for the authenticated project. |
+| `POST /v1/proxy/openai` | Provider-specific execution route. Supports route-specific streaming plus payload-inferred text, image-understanding, image-generation or edit, and audio operations. Public `routing` supported. |
+| `POST /v1/proxy/anthropic` | Provider-specific execution route. Non-stream text messages only. Public `routing` supported. |
+| `POST /v1/proxy/google` | Provider-specific execution route. Non-stream `generate.text` and image-understanding subset through the current route shape. Public `routing` not supported. |
+| `POST /v1/proxy/xai` | Provider-specific execution route. Non-stream text and chat only. Public `routing` not supported. |
+| `POST /v1/proxy/meta` | Provider-specific execution route. Non-stream text and image-understanding subset. `metadata.adapter_mode` selects `native`, `compatible`, or `byo`. Public `routing` not supported. |
+| `POST /v1/jobs` | Async job submission. Request body wraps a canonical `permit` plus provider-specific payload. |
+| `GET /v1/jobs/{job_id}` | Async job status, result assets, usage metrics, and callback metadata. |
+| `GET /v1/requests/{request_id}/timeline` | Public normalized request lifecycle replay for the authenticated project. |
+| `GET /v1/compliance/exports` | Project-scoped compliance export list. |
+| `POST /v1/compliance/exports` | Create a compliance export job for the authenticated project. |
+| `GET /v1/compliance/exports/{export_id}` | Fetch a compliance export job or result record. |
+| `GET /v1/governance/events` | Governance-event readback for the authenticated project. |
+| `GET /v1/governance/events/stream` | SSE governance-event stream for the authenticated project. |
+| `GET /v1/governance/events/{event_id}` | Governance-event detail readback. |
+| `GET /v1/governance/subscriptions` | Governance subscription list. |
+| `POST /v1/governance/subscriptions` | Create a governance subscription. |
+| `DELETE /v1/governance/subscriptions/{subscription_id}` | Delete a governance subscription. |
+| `GET /v1/metrics/executions` | Project-scoped execution metrics. |
+
+## Compatibility
+
+| Route | Notes |
+| --- | --- |
+| `POST /v1/projects/{project_id}/permits` | Older path-bound permit create flow. Still supported. |
+| `POST /v1/proxy/openai/chat/completions` | Hidden alias for `/v1/proxy/openai`. |
+| `GET /v1/dashboard/session` | Session inspection compatibility alias. |
+| `GET /v1/dashboard/projects/{project_id}/api_keys` | Legacy dashboard project API-key list alias. |
+| `POST /v1/dashboard/projects/{project_id}/api_keys` | Legacy dashboard project API-key create alias. |
+| `POST /v1/dashboard/projects/{project_id}/api_keys/{key_id}/revoke` | Legacy dashboard project API-key revoke alias. |
+
+## Public-adjacent management and status surfaces
+
+| Route | Notes |
+| --- | --- |
+| `POST /v1/auth/supabase/exchange` | Exchanges a Supabase JWT for a dashboard session token. |
+| `POST /v1/auth/logout` | Revokes the current dashboard session and clears the session cookie. |
+| `POST /v1/billing/checkout` | User-JWT protected billing checkout flow. |
+| `GET /v1/policies` and `POST /v1/policies` | User-JWT protected policy management. |
+| `DELETE /v1/policies/{policy_id}` and `PATCH /v1/policies/{policy_id}` | User-JWT protected policy mutation. |
+| `GET /v1/projects` and `POST /v1/projects` | User-JWT protected project management. |
+| `GET /v1/projects/{project_id}/api-keys` and `POST /v1/projects/{project_id}/api-keys` | User-JWT protected runtime API-key management. |
+| `POST /v1/projects/{project_id}/api-keys/{key_id}/revoke` | User-JWT protected runtime API-key revoke. |
+| `GET /v1/projects/{project_id}/providers` | User-JWT protected provider-key status list. |
+| `PUT /v1/projects/{project_id}/providers/{provider}/key` | User-JWT protected provider-key set or rotate. |
+| `DELETE /v1/projects/{project_id}/providers/{provider}/key` | User-JWT protected provider-key delete. |
+| `POST /v1/projects/{project_id}/providers/{provider}/test` | User-JWT protected active provider-key test. |
+| `GET /v1/projects/{project_id}/permits` | User-JWT protected project permit readback. |
+| `GET /v1/projects/{project_id}/usage` | User-JWT protected project usage summary. |
+| `GET /v1/projects/{project_id}/cost-forecast` | User-JWT protected project cost forecast. |
+| `GET /v1/projects/{project_id}/policy` and `PATCH /v1/projects/{project_id}/policy` | User-JWT protected project policy management. |
+| `GET /v1/projects/{project_id}/prompt-analytics` | User-JWT protected prompt analytics. |
+| `GET /health`, `GET /healthz`, `GET /v1/ready`, `GET /v1/system/status`, and `GET /v1/version` | Status and health surfaces. |
+| `GET /v1/providers/health/public` and `GET /v1/providers/diagnostics/public` | Public provider-status diagnostics. |
+| `POST /v1/billing/stripe/webhook` | Mounted without a FastAPI auth dependency, but protected by inline Stripe signature validation. |
+
+## Internal and operator
+
+| Route or primitive | Notes |
+| --- | --- |
+| `GET /v1/auth/session` | Dashboard-session inspection route. |
+| `GET /v1/whoami` | Dashboard-session identity helper. |
+| `POST /v1/dry-run` | Dashboard-session helper route. |
+| `POST /v1/organizations` and `/v1/organizations/{org_id}/*` | Dashboard-session and org-membership protected operator and org-management surfaces. |
+| `POST /v1/dashboard/projects/{project_id}/gateway/*` | Dashboard gateway helpers. |
+| `GET /v1/dashboard/observability/*` | Dashboard-session observability surfaces. Operator and UI focused, not public runtime APIs. |
+| `/v1/dashboard/projects/*` | Dashboard-session project, provider-key, runtime-key, execution, usage, policy, and health-management surfaces. |
+| `/v1/control-plane/*` | Dashboard-session control-plane alias, budget, health, and routing-policy surfaces. |
+| `RealtimeSessionService` | Persisted realtime-session scaffolding exists, but there is no public session-start route today. |
+| `ExecutionService`, provider adapters, provider-key resolution, and default fallback chain | Internal implementation details shared by `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and dashboard gateway test execution. |
+
+## Removed
+
+| Route | Notes |
+| --- | --- |
+| `POST /v1/generate` | Removed legacy runtime surface. Use `POST /v1/execute`, `POST /v1/executions`, or permit-first flows instead. |
+| `POST /v1/projects/{project_id}/keys` | Deprecated legacy alias for project API-key minting. |
+
+## Current boundaries
+
+- `/v1/permits` remains the canonical public decision seam
+- `/v1/executions` and `/v1/execute` are both active public execution routes, but they do not have the same request contract
+- `/v1/executions` is provider-neutral at the request boundary, but it is still a narrower contract than the provider-native proxy routes
+- `/v1/execute` accepts a provider-shaped `input` object and returns the normalized execution envelope plus a `resolved` block
+- OpenAI is the only public proxy route with implemented route-specific streaming behavior
+- public routing controls are currently exposed on `/v1/executions`, `/v1/proxy/openai`, and `/v1/proxy/anthropic`
+- public cross-provider fallback is explicit, non-stream, and limited to the implemented OpenAI and Anthropic text-translation subset
+- project-scoped provider keys are shared execution infrastructure across `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and dashboard gateway test execution
+- async jobs are public; realtime sessions are persisted internally for lifecycle replay, but there is no public realtime session API

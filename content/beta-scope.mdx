@@ -1,0 +1,67 @@
+---
+title: Beta Scope
+description: Architectural invariants that active Keel beta docs should assume.
+---
+
+# Beta Scope
+
+This page captures the current beta doctrine: the non-negotiable architectural rules that active docs should assume until code changes say otherwise.
+
+**Status:** Accepted
+
+**Purpose:** Explain the non-negotiable architectural invariants that every governed AI execution path must satisfy before public beta.
+
+## Why this exists
+
+Keel is a governance and control layer for AI execution, not just a transport surface. Because requests can enter through multiple execution surfaces, Keel must preserve the same core safety, policy, accounting, and audit guarantees everywhere. This doctrine defines the invariants that cannot be weakened before beta.
+
+## The seven non-negotiable rules
+
+### 1. One canonical governed execution spine
+
+Every governed AI request must pass through the same enforcement pipeline:
+
+`auth -> authorization -> freshness -> policy -> budget -> firewall -> routing -> execution -> terminal accounting -> audit`
+
+No public or internal execution surface may bypass or reorder these governance stages in a way that weakens enforcement.
+
+### 2. Service-layer invariants
+
+Security-critical rules must be enforced in services and domain layers, not only in route handlers. Routes may adapt inputs and protocol details, but core governance guarantees must remain centralized in shared execution and policy logic.
+
+### 3. Fail closed on indeterminate governance state
+
+If Keel cannot prove a request is allowed, it must deny execution. Missing policy state, ambiguous authorization, incomplete budget state, invalid freshness checks, or partial enforcement are denial conditions, not reasons to continue.
+
+### 4. Strict tenant isolation
+
+No tenant action may affect another tenant's data, routing behavior, or governance state unless that cross-tenant effect is explicitly designed, reviewed, and enforced. Isolation applies to persistence, caching, routing inputs, overrides, and audit visibility.
+
+### 5. Durable terminal accounting
+
+Every billable request must produce durable terminal accounting regardless of success, failure, streaming interruption, cancellation, or retry. Keel must be able to close the lifecycle of a governed execution even when provider or client behavior is imperfect.
+
+### 6. Explicit policy validation
+
+Policy and override structures must be strongly validated and typed. Unknown fields, ambiguous shapes, and silent coercions must be rejected so governance behavior stays explicit, reviewable, and stable over time.
+
+### 7. Consistent guarantees across execution adapters
+
+Different routes, providers, and modalities may differ operationally, but governance guarantees must remain identical. Adapter-specific behavior may change payload translation or transport semantics, but it must not weaken policy, accounting, audit, or isolation guarantees.
+
+## Architectural intent
+
+Keel is the canonical governance layer between applications and AI providers. Applications may choose different request surfaces, but Keel remains responsible for enforcing policy, budget, isolation, routing controls, execution safety checks, terminal accounting, and auditability before any provider call is considered governed.
+
+## Beta gate principle
+
+Any execution path that violates this doctrine is a beta-blocking architectural bug. Such a path is not a minor inconsistency or future cleanup item; it is a release blocker until the invariant is restored.
+
+## Current beta limitations
+
+The current beta implementation remains intentionally narrower than the full internal capability scaffolding.
+
+- public streaming support is limited; OpenAI proxy streaming is implemented, while other public proxy routes currently reject `stream=true`
+- public routing is provider-bound by default; cross-provider fallback exists only as an explicit, narrow OpenAI and Anthropic non-stream text subset
+- permit-time pricing and budget enforcement can still rely on heuristic token estimation in some multimodal and image-heavy paths
+- realtime session persistence exists internally, but there is no public realtime session start route today

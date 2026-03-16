@@ -7,6 +7,8 @@ description: Security posture summary for the active Keel beta surfaces.
 
 This page is the one-page security posture summary for the active beta surfaces.
 
+Use [Threat Model](/docs/threat-model) for the conservative public-boundary view and [Platform Surfaces](/docs/platform-surfaces) for the exact route taxonomy behind those claims.
+
 ## Tenant isolation
 
 Keel's primary runtime isolation boundary is the project. Public runtime routes authenticate into a project and read or persist permits, governed requests, usage rows, governance events, and provider credentials within that project scope. The execution auth stage also rejects mismatched project context before the shared pipeline continues.

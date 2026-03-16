@@ -1,0 +1,57 @@
+---
+title: What is Keel
+description: Product boundary, active public surfaces, and current claims for Keel.
+---
+
+# What is Keel
+
+Keel is a permit-driven AI governance layer and control-plane foundation in front of provider APIs.
+
+It centralizes the parts of AI integration that usually drift across services:
+
+- permit decisions
+- provider-neutral and provider-specific execution governance
+- routing metadata and fallback history
+- prompt and content inspection on supported execution routes
+- audit persistence and request replay
+- async job orchestration
+- meter-aware usage capture
+
+Keel is not a model host.
+
+## Public surface today
+
+- Canonical public:
+  - `POST /v1/permits`
+- Official public:
+  - `POST /v1/execute`
+  - `POST /v1/executions`
+  - `POST /v1/permits/{permit_id}/usage`
+  - `POST /v1/proxy/*`
+  - `POST /v1/jobs`
+  - `GET /v1/jobs/{job_id}`
+  - `GET /v1/requests/{request_id}/timeline`
+
+## Current scope
+
+Keel is implemented today as:
+
+- a provider-agnostic decision layer at the permit boundary
+- a provider-neutral and provider-specific execution-governance layer
+- an async and realtime-capable lifecycle foundation with persisted events and timeline replay
+
+Realtime session persistence exists internally, but there is no public realtime session API yet.
+
+## What Keel does not claim
+
+- autonomous provider routing
+- broad media understanding in Prompt Firewall
+- meter-native permit-time pricing for every multimodal operation
+
+## Where to go next
+
+- [Overview](/docs/overview)
+- [Architecture](/docs/architecture)
+- [System Overview](/docs/system-overview)
+- [Platform Surfaces](/docs/platform-surfaces)
+- [Quickstart](/docs/quickstart)

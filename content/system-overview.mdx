@@ -1,0 +1,47 @@
+---
+title: System Overview
+description: Repo responsibilities, contract surfaces, and current implementation shape.
+---
+
+# System Overview
+
+## Repos and responsibilities
+
+- `keel-api` is the system of record for permit evaluation, execution governance, request lifecycle persistence, and timeline replay.
+- SDKs consume the public contracts from `keel-api`; they do not share runtime code with it.
+
+## Contract surfaces from `keel-api`
+
+- Canonical public:
+  - `POST /v1/permits`
+- Official public:
+  - provider-neutral execution route
+  - unified execute route
+  - permit audit and usage reporting
+  - provider-specific proxy execution routes
+  - async jobs
+  - public request timeline replay
+- Compatibility:
+  - `POST /v1/projects/{project_id}/permits`
+  - `POST /v1/proxy/openai/chat/completions`
+- Internal/operator:
+  - dashboard observability
+  - gateway test execution and dashboard gateway helpers
+- Removed:
+  - `POST /v1/generate`
+
+## Current implementation shape
+
+- permit evaluation is the stable cross-provider governance boundary
+- public execution includes both provider-neutral and provider-specific proxy routes
+- the capability registry and provider adapters are broader than the public route surface
+- async jobs and request timeline replay are first-class public read and write surfaces
+- realtime session lifecycle persistence exists internally, but no public realtime session route exists
+
+## Recommended entry path
+
+- start with [What is Keel](/docs/what-is-keel)
+- run [Quickstart](/docs/quickstart)
+- use [Architecture](/docs/architecture) for the runtime model
+- use [Platform Surfaces](/docs/platform-surfaces) for the exact mounted route taxonomy
+- use [API Reference](/docs/api-reference) for the current placeholder and follow-up direction

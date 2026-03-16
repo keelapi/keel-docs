@@ -1,6 +1,6 @@
 ---
 title: Architecture
-description: Execution modes, core runtime pipeline, and the current architecture story for Keel.
+description: Runtime modes, key components, shared pipeline, and beta doctrine for Keel.
 ---
 
 # Architecture
@@ -18,7 +18,21 @@ Keel is implemented as a permit-driven governance layer with provider-neutral an
 | Async jobs | `POST /v1/jobs` and `GET /v1/jobs/{job_id}` | job state, background execution, callbacks, usage, assets |
 | Realtime session scaffolding | no public route yet | session persistence, usage metrics, execution events |
 
-## Shared pipeline
+## Key components
+
+| Component | Responsibility |
+| --- | --- |
+| Permit canonicalization | Normalizes compatibility payloads into the canonical permit shape. |
+| Permit evaluation | Applies policy, pricing, budget guardrails, idempotency, and permit persistence. |
+| Capability registry | Tracks operation-aware capabilities, execution modes, and routing fitness. |
+| Routing | Resolves provider-bound selection, fallback state, and routing metadata. |
+| Prompt Firewall | Inspects supported prompt-bearing execution paths before dispatch. |
+| Execution spine | Runs the shared stage machinery used by governed execution routes. |
+| Async jobs | Persists job state and background callback behavior. |
+| Timeline replay | Reconstructs request chronology from persisted lifecycle tables. |
+| Provider adapters | Translate provider-specific request and response behavior. |
+
+## Architecture diagram
 
 ```mermaid
 flowchart LR
@@ -53,6 +67,41 @@ Permit evaluation is not a separate pre-routing step in the shared stage chain. 
 - Execution can persist asset summaries and multi-meter usage even when permit-time cost estimation is still token-priced.
 - Request timeline replay is built from existing persisted lifecycle rows; it is not a separate event-store product.
 
+## API surface hierarchy
+
+- Canonical public:
+  - `POST /v1/permits`
+- Official public:
+  - `POST /v1/execute`
+  - `POST /v1/executions`
+  - `POST /v1/permits/{permit_id}/usage`
+  - `POST /v1/proxy/*`
+  - `POST /v1/jobs`
+  - `GET /v1/jobs/{job_id}`
+  - `GET /v1/requests/{request_id}/timeline`
+- Compatibility:
+  - older path-bound permit create and OpenAI alias routes
+- Internal/operator:
+  - dashboard observability and gateway helpers
+- Removed:
+  - `POST /v1/generate`
+
+See [Platform Surfaces](/docs/platform-surfaces) for the mounted route matrix and [Execution Spine](/docs/execution-spine) for the shared stage machinery.
+
+## Beta doctrine
+
+The current release gate is defined by a small set of non-negotiable invariants:
+
+- one canonical governed execution spine
+- service-layer enforcement of security-critical rules
+- fail-closed behavior on indeterminate governance state
+- strict tenant isolation
+- durable terminal accounting
+- explicit policy validation
+- consistent guarantees across adapters
+
+The full doctrine lives on [Beta Scope](/docs/beta-scope).
+
 ## Current limits
 
 - no public realtime session API
@@ -62,5 +111,10 @@ Permit evaluation is not a separate pre-routing step in the shared stage chain. 
 ## Next reading
 
 - [Overview](/docs/overview)
+- [What is Keel](/docs/what-is-keel)
+- [System Overview](/docs/system-overview)
+- [Execution Spine](/docs/execution-spine)
+- [Platform Surfaces](/docs/platform-surfaces)
 - [Quickstart](/docs/quickstart)
+- [Threat Model](/docs/threat-model)
 - [Security](/docs/security)

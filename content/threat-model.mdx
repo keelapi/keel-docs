@@ -1,0 +1,32 @@
+---
+title: Threat Model
+description: Conservative summary of the current public security boundaries.
+---
+
+# Threat Model
+
+This public page is intentionally conservative.
+
+The more detailed repo threat model lives in the backend docs set. This page summarizes the current public security boundaries that are safe to claim from this docs shell.
+
+## Current public security boundaries
+
+For current public behavior, rely on these pages instead:
+
+- [Architecture](/docs/architecture)
+- [Platform Surfaces](/docs/platform-surfaces)
+- [Security](/docs/security)
+
+## What this means today
+
+- project API keys are the runtime caller credential
+- provider keys stay server-side per project
+- Prompt Firewall V1 applies only to prompt-carrying execution routes
+- admin and dashboard routes should not be treated as public runtime surfaces
+- Keel enforces a centralized outbound request policy for provider and authentication-related egress paths
+- provider and JWKS egress paths must use HTTPS, are restricted to approved hosts, are validated through DNS resolution checks that reject private, loopback, link-local, and reserved address space, and keep redirects disabled
+- blocked outbound requests emit structured security events
+
+That outbound policy is application-layer egress validation. It reduces SSRF and unsafe-egress risk for the provider and JWKS paths Keel executes today. It does not replace network-layer egress controls or cover caller-executed permit-first traffic outside Keel. Remote asset URLs supplied in multimodal payloads are admission-validated before dispatch, but the later fetch is still performed by the upstream provider rather than by a Keel-controlled fetcher.
+
+This page intentionally stops at those documented public boundaries.
