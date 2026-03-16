@@ -12,7 +12,12 @@ export type ArtifactLoadResult = {
 }
 
 export type PublicRoute = {
+  auth?: string
+  deprecated?: boolean
+  exposure?: string
+  family?: string
   method: string
+  notes?: string
   path: string
   summary?: string
   operation?: string
@@ -214,25 +219,42 @@ function normalizeRouteObject(
   ])
   const operation = getFirstString(item, ['operation', 'name', 'id'])
   const visibility = getFirstString(item, ['visibility', 'access', 'status'])
+  const exposure = getFirstString(item, ['exposure', 'visibility', 'access', 'status'])
+  const family = getFirstString(item, ['family', 'group', 'category'])
+  const auth = getFirstString(item, ['auth', 'authentication', 'auth_mode'])
+  const notes = getFirstString(item, ['notes', 'details'])
+  const deprecated =
+    getBoolean(item.deprecated) === true ||
+    getFirstString(item, ['status'])?.toLowerCase() === 'deprecated'
 
   if (methods.length > 0) {
     return methods.map(method => ({
+      auth,
+      deprecated,
+      exposure,
+      family,
       method: normalizeMethod(method),
+      notes,
+      operation,
       path: pathValue,
       summary,
-      operation,
       visibility
     }))
   }
 
   return [
     {
+      auth,
+      deprecated,
+      exposure,
+      family,
       method: normalizeMethod(
         getFirstString(item, ['method', 'http_method', 'verb'])
       ),
+      notes,
+      operation,
       path: pathValue,
       summary,
-      operation,
       visibility
     }
   ]

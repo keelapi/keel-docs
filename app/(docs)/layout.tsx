@@ -40,6 +40,7 @@ export default async function DocsLayout({
         </Footer>
       }
       docsRepositoryBase={themeConfig.docsRepositoryBase}
+      editLink={themeConfig.editLink}
       sidebar={themeConfig.sidebar}
       toc={themeConfig.toc}
       feedback={themeConfig.feedback}
