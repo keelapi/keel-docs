@@ -13,7 +13,7 @@
   --secondary: 210 40% 96%;
   --secondary-foreground: 222.2 47.4% 11.2%;
   --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted-foreground: 215 15% 39%;
   --accent: 210 40% 96%;
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 72% 51%;
@@ -26,7 +26,7 @@
   --nextra-primary-hue: 214;
   --nextra-primary-saturation: 66%;
   --nextra-primary-lightness: 42%;
-  --nextra-content-width: 1120px;
+  --nextra-content-width: 944px;
   --nextra-navbar-height: 64px;
 }
 
@@ -49,7 +49,7 @@
   --secondary: 217.2 32.6% 17.5%;
   --secondary-foreground: 210 40% 98%;
   --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted-foreground: 215 18% 72%;
   --accent: 217.2 32.6% 17.5%;
   --accent-foreground: 210 40% 98%;
   --destructive: 0 62.8% 45%;
@@ -68,9 +68,7 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(circle at top, hsl(var(--primary) / 0.08), transparent 30%),
-    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary) / 0.65) 100%);
+  background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family:
     ui-sans-serif,
@@ -79,12 +77,6 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-}
-
-.dark body {
-  background:
-    radial-gradient(circle at top, hsl(var(--primary) / 0.16), transparent 26%),
-    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--secondary) / 0.6) 100%);
 }
 
 a {
@@ -202,6 +194,12 @@ pre {
   background: hsl(var(--background)) !important;
 }
 
+.nextra-content,
+.nextra-toc,
+.nextra-sidebar-container {
+  background: hsl(var(--background));
+}
+
 .nextra-sidebar-footer {
   border-top-color: hsl(var(--border)) !important;
 }
@@ -222,14 +220,15 @@ pre {
 }
 
 .nextra-toc :where(a),
-.nextra-sidebar :where(a),
-.nextra-content :where(p, li) {
+.nextra-sidebar :where(a) {
   color: hsl(var(--muted-foreground));
 }
 
 .nextra-content :where(p, li) {
-  font-size: 0.98rem;
-  line-height: 1.7;
+  color: hsl(var(--foreground) / 0.84);
+  font-size: 1rem;
+  line-height: 1.78;
+  text-wrap: pretty;
 }
 
 .nextra-content :where(h1, h2, h3, h4, strong),
@@ -245,18 +244,43 @@ pre {
 
 .nextra-content :where(h2) {
   font-size: clamp(1.35rem, 2vw, 1.7rem);
-  font-weight: 600;
+  font-weight: 650;
+  line-height: 1.35;
   letter-spacing: -0.02em;
 }
 
 .nextra-content :where(h3) {
   font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 625;
+  line-height: 1.45;
+  letter-spacing: -0.015em;
 }
 
 .nextra-content :where(a:not(.subheading-anchor)) {
   color: hsl(var(--primary));
+}
+
+.nextra-content :where(h2 + p, h3 + p) {
+  margin-top: 0.75rem;
+}
+
+.nextra-content :where(.nextra-cards) {
+  gap: 0.875rem;
+}
+
+.nextra-content :where(.nextra-card) {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border) / 0.72);
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
+}
+
+.nextra-content :where(.nextra-card:hover) {
+  border-color: hsl(var(--border) / 0.92);
+  box-shadow: 0 4px 12px hsl(var(--foreground) / 0.06);
+}
+
+.nextra-content :where(.nextra-card p) {
+  color: hsl(var(--foreground) / 0.74);
 }
 
 .nextra-content :where(code):not(pre code) {
