@@ -18,17 +18,13 @@ export default async function DocsLayout({
         <Navbar
           logoLink="https://keelapi.com"
           logo={
-            <span className="keel-docs-brand">
-              <span className="keel-docs-brand__badge">
-                Keel
-              </span>
-              <span className="keel-docs-brand__copy">
-                <span className="keel-docs-brand__title">
-                  Docs
-                </span>
-                <span className="keel-docs-brand__subtitle">
-                  Governed AI infrastructure
-                </span>
+            <span className="keel-header-brand">
+              <img className="keel-header-brand__icon" src="/keel.svg" alt="" aria-hidden="true" />
+              <span className="keel-header-brand__copy">
+                <span className="keel-header-brand__wordmark">Keel</span>
+                <span className="keel-header-brand__divider" aria-hidden="true"></span>
+                <span className="keel-header-brand__title">Docs</span>
+                <span className="keel-header-brand__subtitle">Governed AI infrastructure</span>
               </span>
             </span>
           }
