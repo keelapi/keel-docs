@@ -20,19 +20,19 @@ export default async function DocsLayout({
           logoLink={false}
           logo={
             <span className="keel-header-brand">
-              <Image
-                className="keel-header-brand__icon"
-                src="/keel.svg"
-                alt=""
-                aria-hidden="true"
-                width={18}
-                height={19}
-                priority
-              />
+              <a className="keel-header-brand__link" href="https://keelapi.com">
+                <Image
+                  className="keel-header-brand__icon"
+                  src="/keel.svg"
+                  alt=""
+                  aria-hidden="true"
+                  width={18}
+                  height={19}
+                  priority
+                />
+                <span className="keel-header-brand__wordmark">Keel</span>
+              </a>
               <span className="keel-header-brand__copy">
-                <a className="keel-header-brand__link" href="https://keelapi.com">
-                  Keel
-                </a>
                 <span className="keel-header-brand__separator" aria-hidden="true">
                   |
                 </span>
