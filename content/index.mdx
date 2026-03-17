@@ -3,29 +3,49 @@ title: Home
 description: Keel is a permit-driven governance and execution control layer in front of provider APIs.
 ---
 
-import { Cards } from 'nextra/components'
+import Link from 'next/link'
 
 # Keel Docs
 
 Keel is a permit-driven governance and execution control layer in front of provider APIs. It gives teams a single place to enforce decisioning, routing, budget controls, and auditability before AI traffic reaches a model provider.
 
-<Cards>
-  <Cards.Card title="Overview" href="/overview">
-    Use the docs map to choose the right starting point across product, architecture, and security.
-  </Cards.Card>
-  <Cards.Card title="What is Keel" href="/what-is-keel">
-    Understand the product boundary, active public surfaces, and the current scope of the platform.
-  </Cards.Card>
-  <Cards.Card title="Quickstart" href="/quickstart">
-    Bring up the backend locally, mint a project key, and send one governed request through Keel.
-  </Cards.Card>
-  <Cards.Card title="Architecture" href="/architecture">
-    Review the runtime modes, shared pipeline, beta doctrine, and persisted lifecycle model behind the product.
-  </Cards.Card>
-  <Cards.Card title="Security" href="/security">
-    Read the current security posture, isolation model, request-freshness controls, and prompt-firewall limits.
-  </Cards.Card>
-</Cards>
+<div className="keel-home-nav">
+  <Link className="keel-home-nav__item" href="/overview">
+    <span className="keel-home-nav__title">Overview</span>
+    <div className="keel-home-nav__description">
+      Use the docs map to choose the right starting point across product, architecture,
+      and security.
+    </div>
+  </Link>
+  <Link className="keel-home-nav__item" href="/what-is-keel">
+    <span className="keel-home-nav__title">What is Keel</span>
+    <div className="keel-home-nav__description">
+      Understand the product boundary, active public surfaces, and the current scope
+      of the platform.
+    </div>
+  </Link>
+  <Link className="keel-home-nav__item" href="/quickstart">
+    <span className="keel-home-nav__title">Quickstart</span>
+    <div className="keel-home-nav__description">
+      Bring up the backend locally, mint a project key, and send one governed request
+      through Keel.
+    </div>
+  </Link>
+  <Link className="keel-home-nav__item" href="/architecture">
+    <span className="keel-home-nav__title">Architecture</span>
+    <div className="keel-home-nav__description">
+      Review the runtime modes, shared pipeline, beta doctrine, and persisted
+      lifecycle model behind the product.
+    </div>
+  </Link>
+  <Link className="keel-home-nav__item" href="/security">
+    <span className="keel-home-nav__title">Security</span>
+    <div className="keel-home-nav__description">
+      Read the current security posture, isolation model, request-freshness controls,
+      and prompt-firewall limits.
+    </div>
+  </Link>
+</div>
 
 ## What Keel covers
 

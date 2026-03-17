@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Footer, Layout, Navbar } from 'nextra-theme-docs'
 import { getPageMap } from 'nextra/page-map'
 import { DocsPageMeta } from '../../components/docs-page-meta'
@@ -16,15 +17,26 @@ export default async function DocsLayout({
       pageMap={pageMap}
       navbar={
         <Navbar
-          logoLink="https://keelapi.com"
+          logoLink={false}
           logo={
             <span className="keel-header-brand">
-              <img className="keel-header-brand__icon" src="/keel.svg" alt="" aria-hidden="true" />
+              <Image
+                className="keel-header-brand__icon"
+                src="/keel.svg"
+                alt=""
+                aria-hidden="true"
+                width={18}
+                height={19}
+                priority
+              />
               <span className="keel-header-brand__copy">
-                <span className="keel-header-brand__wordmark">Keel</span>
-                <span className="keel-header-brand__divider" aria-hidden="true"></span>
+                <a className="keel-header-brand__link" href="https://keelapi.com">
+                  Keel
+                </a>
+                <span className="keel-header-brand__separator" aria-hidden="true">
+                  |
+                </span>
                 <span className="keel-header-brand__title">Docs</span>
-                <span className="keel-header-brand__subtitle">Governed AI infrastructure</span>
               </span>
             </span>
           }

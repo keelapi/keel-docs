@@ -435,7 +435,8 @@ function normalizeProviderRow(
     ...extractOperationNames(item.operations),
     ...extractOperationNames(item.supported_operations),
     ...extractOperationNames(item.supported),
-    ...extractOperationNames(item.capabilities)
+    ...extractOperationNames(item.capabilities),
+    ...extractOperationNames(item.executions_operations)
   ]).sort((left, right) => left.localeCompare(right))
 
   const unsupportedOperations = uniqStrings([
