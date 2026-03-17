@@ -5,7 +5,7 @@ const themeConfig = {
   gitTimestamp: true,
   head: (
     <>
-      <meta name="theme-color" content="#000000" />
+      <meta name="theme-color" content="#2a5faa" />
       <meta
         name="description"
         content="Keel documentation — policy enforcement and execution governance for AI systems."
