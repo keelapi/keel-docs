@@ -16,6 +16,7 @@ export default async function DocsLayout({
       pageMap={pageMap}
       navbar={
         <Navbar
+          logoLink="https://keelapi.com"
           logo={
             <span className="keel-docs-brand">
               <span className="keel-docs-brand__badge">
