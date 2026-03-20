@@ -3,23 +3,33 @@ title: Execution Spine
 description: Shared execution machinery used by the governed execution routes.
 ---
 
+{/* SYNC: GENERATED from docs/public-canonical/execution-spine.md. Edit the canonical source in keel-api, not this generated content. */}
+
 # Execution Spine
 
-This page describes the shared execution machinery used by the governed execution routes. It is narrower than a claim that every route is identical. For the route matrix, see [Platform Surfaces](/platform-surfaces).
+This page describes the shared execution machinery used by the governed
+execution routes. It is narrower than a claim that every route is identical.
+For the route matrix, see [Platform Surfaces](/platform-surfaces).
 
 ## Shared spine concept
 
-The common execution language lives under `app/execution/`. Routes build an `ExecutionContext`, bind route-specific dependencies, and run an async stage chain. The default stage order in `app/execution/engine/pipeline.py` is:
+The common execution language lives under `app/execution/`. Routes build an
+`ExecutionContext`, bind route-specific dependencies, and run an async stage
+chain. The default stage order in `app/execution/engine/pipeline.py` is:
 
 ```text
 auth -> normalize -> permit -> firewall -> routing -> dispatch -> reconcile -> ledger -> emit -> response
 ```
 
-Public routes do not always run the exact default chain. For example, `/v1/executions`, `/v1/execute`, and async jobs insert route-specific pre-dispatch logic, and some route wrappers omit the final response stage because they build HTTP responses themselves.
+Public routes do not always run the exact default chain. For example,
+`/v1/executions`, `/v1/execute`, and async jobs insert route-specific
+pre-dispatch logic, and some route wrappers omit the final response stage
+because they build HTTP responses themselves.
 
 ## Execution context
 
-`ExecutionContext` is the mutable accumulator for a single governed attempt. It holds:
+`ExecutionContext` is the mutable accumulator for a single governed attempt. It
+holds:
 
 - authenticated project and API-key metadata
 - canonical execution intent
@@ -33,86 +43,122 @@ Raw provider credentials are intentionally not stored on the context.
 ## Stage responsibilities
 
 `auth`:
-Verifies that the bound project matches the request project and loads the API-key context supplied by the route wrapper.
+Verifies that the bound project matches the request project and loads the API
+key context supplied by the route wrapper.
 
 `normalize`:
 Sets token estimates, estimate provenance, and preflight pricing state.
 
 `permit`:
-Builds the canonical permit request from execution fields. It prepares the governance payload; persistence happens later.
+Builds the canonical permit request from execution fields. It prepares the
+governance payload; persistence happens later.
 
 `firewall`:
-Consumes route-bound prompt-firewall state. It can attach a deny `PolicyDecision`, but only if the route supplied a firewall dependency.
+Consumes route-bound prompt-firewall state. It can attach a deny
+`PolicyDecision`, but only if the route supplied a firewall dependency.
 
 `routing`:
-Resolves the routing plan, filters fallback targets, and calls `evaluate_and_store_permit`. This is where the permit is persisted in the shared pipeline.
+Resolves the routing plan, filters fallback targets, and calls
+`evaluate_and_store_permit`. This is where the permit is persisted in the
+shared pipeline.
 
 `dispatch`:
-Resolves the project provider key, translates fallback requests when needed, dispatches through the provider adapter, and manages retry and fallback state.
+Resolves the project provider key, translates fallback requests when needed,
+dispatches through the provider adapter, and manages retry and fallback state.
 
 `reconcile`:
-Normalizes final usage, reconciles model identity, validates authorized versus served model, and computes final cost.
+Normalizes final usage, reconciles model identity, validates authorized versus
+served model, and computes final cost.
 
 `ledger`:
-Persists terminal accounting. It can also write a fallback accounting row after successful dispatch if the pipeline fails before the normal ledger stage.
+Persists terminal accounting. It can also write a fallback accounting row after
+successful dispatch if the pipeline fails before the normal ledger stage.
 
 `emit`:
-Writes governance events such as `permit.evaluated`, `execution.completed`, and `usage.recorded`.
+Writes governance events such as `permit.evaluated`, `execution.completed`, and
+`usage.recorded`.
 
 ## Routing handoff
 
-The routing stage is the handoff from governance intent to provider-bound execution. It produces:
+The routing stage is the handoff from governance intent to provider-bound
+execution. It produces:
 
 - the selected provider and model
 - the filtered fallback chain
 - the persisted permit tied to that routing decision
 
-That handoff matters because later dispatch and reconcile stages depend on the same persisted routing state the permit was authorized for.
+That handoff matters because later dispatch and reconcile stages depend on the
+same persisted routing state the permit was authorized for.
 
 ## Dispatch and reconcile
 
-Dispatch is shared, but not uniform. The stage handles common provider-key resolution and adapter execution, while route wrappers still choose:
+Dispatch is shared, but not uniform. The stage handles common provider-key
+resolution and adapter execution, while route wrappers still choose:
 
 - how provider-native payloads are built
 - whether streaming uses adapter-native streaming or a route-owned dispatcher
 - which pre-dispatch guards run before the provider call
 
-Reconcile is shared for both normalized usage extraction and model reconciliation. It raises a deny-style failure if the provider serves a model that is not allowed by the permit.
+Reconcile is shared for both normalized usage extraction and model
+reconciliation. It raises a deny-style failure if the provider serves a model
+that is not allowed by the permit.
 
 ## Ledger and terminal accounting
 
-The ledger stage is the durable accounting boundary. Normal paths write final usage after reconcile. If dispatch succeeded but reconcile or a later stage fails before ledger, the pipeline attempts post-dispatch fallback accounting so the request does not end with neither a terminal ledger row nor a persisted fallback accounting write.
+The ledger stage is the durable accounting boundary. Normal paths write final
+usage after reconcile. If dispatch succeeded but reconcile or a later stage
+fails before ledger, the pipeline attempts post-dispatch fallback accounting so
+the request does not end with neither a terminal ledger row nor a persisted
+fallback accounting write.
 
-Streaming terminal accounting is hardened under the same durability goal. When stream dispatch succeeded and the primary stream-close persistence attempt fails, the shared terminal-accounting helper retries with fallback persistence instead of treating the stream as unaccounted for.
+Streaming terminal accounting is hardened under the same durability goal. When
+stream dispatch succeeded and the primary stream-close persistence attempt
+fails, the shared terminal-accounting helper retries with fallback persistence
+instead of treating the stream as unaccounted for.
 
-That hardening is about durability, not a claim of perfect accuracy. If the provider never emits final usage, the fallback path can still rely on estimated or lower-bound output and cost data. Observed streamed output is preserved as a floor on interruption paths so fallback accounting does not degrade to zero or empty output, but those records can still remain estimated-final rather than exact.
+That hardening is about durability, not a claim of perfect accuracy. If the
+provider never emits final usage, the fallback path can still rely on estimated
+or lower-bound output and cost data. Observed streamed output is preserved as a
+floor on interruption paths so fallback accounting does not degrade to zero or
+empty output, but those records can still remain estimated-final rather than
+exact.
 
 ## Emit and lifecycle persistence
 
-The emit stage writes governance events. Other lifecycle persistence happens in route wrappers and shared helpers:
+The emit stage writes governance events. Other lifecycle persistence happens in
+route wrappers and shared helpers:
 
 - `governed_requests` rows track request-level terminal state
 - `usage_ledger` records execution and request status chronology
 - `usage_logs` store usage and accounting detail
 - async jobs and realtime sessions persist their own lifecycle tables
 
-Timeline replay reads across those persisted tables later; it is not driven by the stage chain alone.
+Timeline replay reads across those persisted tables later; it is not driven by
+the stage chain alone.
 
 ## Route-specific wrappers
 
 The shared spine is wrapped differently depending on the surface:
 
-- `/v1/executions` and `/v1/execute` bind routing, prompt-firewall, pricing, idempotency, and optional stream dispatch dependencies around the shared chain
-- provider-specific proxy routes preserve provider-native payload semantics and route-owned replay behavior
-- async jobs run the same core stages in background processing, but bind job-specific ledger and callback behavior
-- internal gateway helpers still reuse the stage machinery, but they are not public runtime contracts
+- `/v1/executions` and `/v1/execute` bind routing, prompt-firewall, pricing,
+  idempotency, and optional stream dispatch dependencies around the shared
+  chain
+- provider-specific proxy routes preserve provider-native payload semantics and
+  route-owned replay behavior
+- async jobs run the same core stages in background processing, but bind
+  job-specific ledger and callback behavior
+- internal gateway helpers still reuse the stage machinery, but they are not
+  public runtime contracts
 
 ## Streaming caveats
 
 Streaming is not a single generic implementation:
 
-- route wrappers may bypass normal ledger behavior until stream termination, then hand off to shared hardened terminal-accounting persistence
+- route wrappers may bypass normal ledger behavior until stream termination,
+  then hand off to shared hardened terminal-accounting persistence
 - OpenAI public streaming has route-specific handling around the shared stages
 - public streaming coverage is narrower than sync execution coverage
 
-For that reason, "shared execution spine" should be read as shared governance and accounting machinery with route-owned streaming edges, not as proof that all transport behavior is unified.
+For that reason, "shared execution spine" should be read as shared governance
+and accounting machinery with route-owned streaming edges, not as proof that
+all transport behavior is unified.

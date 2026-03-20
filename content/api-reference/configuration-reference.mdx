@@ -1,0 +1,97 @@
+---
+title: Configuration Reference
+description: Runtime settings categories and non-dev hardening baseline.
+---
+
+{/* SYNC: GENERATED from docs/public-canonical/configuration-reference.md. Edit the canonical source in keel-api, not this generated content. */}
+
+# Configuration Reference
+
+This is the canonical runtime configuration reference for the public docs sync
+scope.
+
+Code is still the source of truth. The authoritative settings model lives in
+`app/core/config.py`; this page is the operator-facing map for the runtime
+settings categories that must stay aligned with backend behavior.
+
+## Current configuration areas
+
+- application mode and environment hardening
+- database connectivity and migration prerequisites
+- runtime auth and project API-key behavior
+- provider-key encryption and outbound provider access
+- billing and Stripe integration
+- job callback secrets and freshness enforcement
+- tracing, diagnostics, and observability toggles
+
+## Minimum production configuration
+
+This section summarizes the minimum categories operators must understand for a
+non-dev deployment. It is intentionally not a full environment-variable dump.
+
+### Application and database baseline
+
+- `APP_ENV` must be set to a non-dev value for production behavior
+- `DATABASE_URL` must point at the runtime database, and migrations must be
+  applied before startup
+
+### Required non-dev security settings
+
+In non-dev environments, the settings model currently refuses to start unless
+the following categories are configured:
+
+- Supabase JWT audience: `SUPABASE_JWT_AUDIENCE`
+- provider key encryption:
+  `KEEL_PROVIDER_ENC_KEYS` or legacy `KEEL_PROVIDER_KEY_ENC_KEY`
+- client API-key HMAC secret: `KEEL_CLIENT_KEY_HMAC_SECRET`
+- job webhook signing secret: `KEEL_JOB_WEBHOOK_SECRET`
+
+Request freshness is a hardened non-dev default:
+
+- if `APP_ENV` is non-dev and `KEEL_REQUIRE_REQUEST_FRESHNESS` is unset, Keel
+  enables request freshness automatically
+- if `APP_ENV` is non-dev and `KEEL_REQUIRE_REQUEST_FRESHNESS=false`, startup
+  fails closed
+- local, dev, and test environments keep the default off unless the operator
+  enables it explicitly
+
+Non-dev startup also hardens some defaults automatically or refuses unsafe
+settings, including disabling auth debug logging and defaulting
+`KEEL_REJECT_LEGACY_API_KEY_HASHES` to `true` unless explicitly set.
+
+### Runtime execution and provider access
+
+Operators should explicitly review:
+
+- proxy-route exposure, controlled by `KEEL_PROXY_ROUTES_ENABLED`
+- platform-wide execution disablement via `KEEL_EXECUTION_DISABLED`
+- provider pricing JSON for any provider or model that must pass pre-dispatch
+  pricing checks
+- provider-key encryption key ring material needed to decrypt project-scoped
+  provider credentials at runtime
+
+### Billing and external integrations
+
+Only configure these categories if the deployment uses the related surfaces:
+
+- Supabase base URL and JWT audience for dashboard and user auth flows
+- Stripe secret, webhook secret, and checkout URLs for billing and checkout
+  flows
+- CORS and dashboard CSRF allowed origins for deployed operator frontends
+
+### Operator and bootstrap controls
+
+Bootstrap and diagnostics are separate from the minimum runtime baseline:
+
+- `KEEL_BOOTSTRAP_ADMIN_KEY` gates bootstrap and operator endpoints
+- `KEEL_ENABLE_ADMIN_DIAG` is off by default and should remain an explicit
+  operator decision in non-dev
+
+## Validation path
+
+- start with `app/core/config.py` for required settings and non-dev guards
+- check `app/db/session.py` for database startup expectations
+- check route modules under `app/api/v1/routes/` for surface-specific config
+  dependencies
+- check tests that exercise startup, billing, and execution flows before
+  rewriting this page in depth

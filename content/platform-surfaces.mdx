@@ -3,19 +3,26 @@ title: Platform Surfaces
 description: Implemented route taxonomy for Keel's mounted runtime and control surfaces.
 ---
 
+{/* SYNC: GENERATED from docs/public-canonical/platform-surfaces.md. Edit the canonical source in keel-api, not this generated content. */}
+
 # Platform Surfaces
 
-This page tracks the implemented route taxonomy for Keel's mounted AI runtime, request lifecycle, compatibility, and operator surfaces.
+This page tracks the implemented route taxonomy for Keel's mounted AI runtime,
+request lifecycle, compatibility, and operator surfaces.
 
 ## Surface taxonomy
 
 Use this page as the mounted-surface map for beta:
 
 - decision surfaces: permit creation and permit readback and audit routes
-- execution surfaces: unified execution, provider-native proxy execution, and async job submission and status
-- lifecycle surfaces: request timeline replay, governance event readback, event streaming, and compliance export flows
-- governance and telemetry surfaces: metrics, provider diagnostics, billing webhook ingestion, and public provider health status
-- management and operator surfaces: project, policy, provider-key, dashboard, organization, and control-plane routes
+- execution surfaces: unified execution, provider-native proxy execution, and
+  async job submission and status
+- lifecycle surfaces: request timeline replay, governance event readback, event
+  streaming, and compliance export flows
+- governance and telemetry surfaces: metrics, provider diagnostics, billing
+  webhook ingestion, and public provider health status
+- management and operator surfaces: project, policy, provider-key, dashboard,
+  organization, and control-plane routes
 
 ## Beta support matrix
 
@@ -126,11 +133,20 @@ Use this page as the mounted-surface map for beta:
 ## Current boundaries
 
 - `/v1/permits` remains the canonical public decision seam
-- `/v1/executions` and `/v1/execute` are both active public execution routes, but they do not have the same request contract
-- `/v1/executions` is provider-neutral at the request boundary, but it is still a narrower contract than the provider-native proxy routes
-- `/v1/execute` accepts a provider-shaped `input` object and returns the normalized execution envelope plus a `resolved` block
-- OpenAI is the only public proxy route with implemented route-specific streaming behavior
-- public routing controls are currently exposed on `/v1/executions`, `/v1/proxy/openai`, and `/v1/proxy/anthropic`
-- public cross-provider fallback is explicit, non-stream, and limited to the implemented OpenAI and Anthropic text-translation subset
-- project-scoped provider keys are shared execution infrastructure across `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and dashboard gateway test execution
-- async jobs are public; realtime sessions are persisted internally for lifecycle replay, but there is no public realtime session API
+- `/v1/executions` and `/v1/execute` are both active public execution routes,
+  but they do not have the same request contract
+- `/v1/executions` is provider-neutral at the request boundary, but it is still
+  a narrower contract than the provider-native proxy routes
+- `/v1/execute` accepts a provider-shaped `input` object and returns the
+  normalized execution envelope plus a `resolved` block
+- OpenAI is the only public proxy route with implemented route-specific
+  streaming behavior
+- public routing controls are currently exposed on `/v1/executions`,
+  `/v1/proxy/openai`, and `/v1/proxy/anthropic`
+- public cross-provider fallback is explicit, non-stream, and limited to the
+  implemented OpenAI and Anthropic text-translation subset
+- project-scoped provider keys are shared execution infrastructure across
+  `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and dashboard
+  gateway test execution
+- async jobs are public; realtime sessions are persisted internally for
+  lifecycle replay, but there is no public realtime session API
