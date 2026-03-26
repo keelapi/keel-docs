@@ -8,7 +8,7 @@ const meta = {
   },
   overviewSection: {
     type: 'separator',
-    title: 'Overview'
+    title: 'Getting Started'
   },
   overview: 'Overview',
   'why-keel': 'Why Keel',
@@ -20,7 +20,7 @@ const meta = {
   },
   architectureSection: {
     type: 'separator',
-    title: 'Architecture'
+    title: 'System Design'
   },
   architecture: 'Architecture',
   'system-overview': 'System Overview',
@@ -28,14 +28,14 @@ const meta = {
   'execution-spine': 'Execution Spine',
   securitySection: {
     type: 'separator',
-    title: 'Security'
+    title: 'Trust & Security'
   },
   security: 'Security',
   'threat-model': 'Threat Model',
   'api-guarantees': 'API Guarantees',
   apiSection: {
     type: 'separator',
-    title: 'API Reference'
+    title: 'API'
   },
   'api-reference': 'API Reference',
   permits: 'Permits',
