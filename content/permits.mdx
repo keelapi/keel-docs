@@ -9,6 +9,15 @@ Use this API when you want Keel to evaluate a request, persist the decision, and
 
 > Permit creation requires `project_id` in the body.
 
+## When to use permits vs execution routes
+
+- **You control the provider call** — use `POST /v1/permits`. Keel evaluates policy and returns a decision. Your app calls the provider and reports usage back.
+- **You want Keel to call the provider** with a portable, provider-neutral request — use [`POST /v1/executions`](/executions).
+- **You have provider-shaped payloads** but want normalized output — use [`POST /v1/execute`](/execute).
+- **You want provider-native input and output** — use [`POST /v1/proxy/*`](/proxy-execution).
+
+All execution routes evaluate a permit internally. The difference is whether *you* or *Keel* makes the provider call.
+
 ## Route summary
 
 | Route | Status | Purpose |
@@ -28,9 +37,22 @@ Authorization: Bearer <project_api_key>
 
 `X-API-Key` remains accepted for compatibility, but Bearer auth is the documented contract.
 
+## HTTP status codes
+
+| Code | Meaning |
+| --- | --- |
+| `200` | Permit created. Both `allow` and `deny` decisions return 200 — branch on `decision`, not status code. |
+| `400` | Malformed payload or validation failure (invalid subject, action, or resource structure). |
+| `401` | Missing or invalid API key. |
+| `403` | API key scope insufficient, or `project_id` in the body does not match the key's project. |
+| `409` | Idempotency key reused with a different request payload. |
+| `500` | Unhandled server error. |
+
 ## Idempotency
 
-`POST /v1/permits` uses the canonical body field `idempotency_key`.
+`POST /v1/permits` uses the body field `idempotency_key` (not an HTTP header).
+
+> Execution routes (`/v1/executions`, `/v1/execute`, `/v1/proxy/*`) use the **HTTP header** `Idempotency-Key` instead. Do not mix the two — body keys are ignored on execution routes, and headers are ignored on permits.
 
 - same key plus the same semantic permit payload replays the prior permit
 - same key plus a different semantic payload returns `409 conflict`
@@ -38,16 +60,16 @@ Authorization: Bearer <project_api_key>
 
 That default makes onboarding ergonomic, but retries without a client-supplied key do not get a stable client-controlled replay contract.
 
-## Smallest useful request
+## Request shape
 
-Start here for a first permit call. Add estimates, routing, or `context` only when your policy needs them.
+> The bearer token is project-scoped, but `POST /v1/permits` still requires `project_id` in the request body to explicitly bind the permit row to a project.
 
-Keep `idempotency_key` even though it is optional in the schema. It is the smallest safe starting point for retries.
+Start here. Fields marked *optional* can be omitted for a first call — add them when your policy needs estimates, routing hints, or request context.
 
-```json
+```jsonc
 {
   "project_id": "<project_uuid>",
-  "idempotency_key": "permit-min-001",
+  "idempotency_key": "permit-demo-001",
   "subject": {
     "type": "user",
     "id": "usr_123"
@@ -61,43 +83,13 @@ Keep `idempotency_key` even though it is optional in the schema. It is the small
     "attributes": {
       "provider": "openai",
       "model": "gpt-4o-mini",
-      "operation": "generate.text"
-    }
-  }
-}
-```
-
-## Canonical request shape
-
-> The bearer token is project-scoped, but `POST /v1/permits` still requires `project_id` in the request body to explicitly bind the permit row to a project.
-
-```json
-{
-  "project_id": "<project_uuid>",
-  "idempotency_key": "idem_001",
-  "subject": {
-    "type": "user",
-    "id": "usr_123",
-    "attributes": {}
-  },
-  "action": {
-    "name": "ai.generate.summary",
-    "attributes": {}
-  },
-  "resource": {
-    "type": "request",
-    "id": "req_123",
-    "attributes": {
-      "provider": "openai",
-      "model": "gpt-4o-mini",
       "operation": "generate.text",
-      "modality": "text",
-      "execution_mode": "sync",
-      "estimated_input_tokens": 200,
-      "estimated_output_tokens": 250,
-      "max_output_tokens_requested": 300,
-      "inputs": [],
-      "routing": {
+      "modality": "text",                          // optional
+      "execution_mode": "sync",                    // optional
+      "estimated_input_tokens": 200,               // optional
+      "estimated_output_tokens": 250,              // optional
+      "max_output_tokens_requested": 300,          // optional
+      "routing": {                                 // optional
         "priority": "cheap",
         "task_type": "summarization",
         "latency_target_ms": 1500,
@@ -106,15 +98,13 @@ Keep `idempotency_key` even though it is optional in the schema. It is the small
       }
     }
   },
-  "context": {
+  "context": {                                     // optional, permit-only
     "timestamp": "2026-03-09T00:00:00Z",
     "ip": "127.0.0.1",
     "user_agent": "curl"
   }
 }
 ```
-
-> Execution routes do not use this body field. Use the `Idempotency-Key` header instead.
 
 ## Top-level fields
 
@@ -124,8 +114,16 @@ Keep `idempotency_key` even though it is optional in the schema. It is the small
 | `idempotency_key` | No | Client-supplied replay key for safe retries. |
 | `subject` | Yes | Actor the decision applies to. |
 | `action` | Yes | Requested governed action. |
-| `resource` | Yes | Request-shaped resource and execution metadata under evaluation. |
+| `resource` | Yes | Request-shaped resource and execution metadata under evaluation. See `resource` fields below. |
 | `context` | No | Optional request context such as timestamp, IP, or user agent. This public top-level field is permit-only. |
+
+## `resource` fields
+
+| Field | Required? | Current meaning |
+| --- | --- | --- |
+| `resource.type` | Yes | Caller-supplied label for the resource kind. Not validated against an enum — any non-empty string is accepted. Common values: `"request"`, `"ai.chat.completion"`. |
+| `resource.id` | Yes | Caller-generated identifier for this resource instance. Not validated beyond being a non-empty string — no UUID or format requirement. Use this to correlate the permit with your internal request tracking. |
+| `resource.attributes` | Yes | Execution metadata. See fields below. |
 
 ## `resource.attributes` fields
 
@@ -160,38 +158,6 @@ Compatibility note:
 - it does not replace `POST /v1/executions`, `POST /v1/execute`, or the provider-specific proxy routes
 
 ## API example
-
-> Execution routes do not use this body field. Use the `Idempotency-Key` header instead.
-
-### curl
-
-```bash
-curl -sS -X POST https://api.keelapi.com/v1/permits \
-  -H "Authorization: Bearer keel_sk_your_key_here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_id": "<project_uuid>",
-    "idempotency_key": "permit-demo-001",
-    "subject": {"type": "user", "id": "usr_123"},
-    "action": {"name": "ai.generate.summary"},
-    "resource": {
-      "type": "request",
-      "id": "req_123",
-      "attributes": {
-        "provider": "openai",
-        "model": "gpt-4o-mini",
-        "operation": "generate.text",
-        "modality": "text",
-        "execution_mode": "sync",
-        "estimated_input_tokens": 200,
-        "estimated_output_tokens": 250,
-        "max_output_tokens_requested": 300
-      }
-    }
-  }'
-```
-
-_Test this request in the Playground:_ [Try in Playground](https://play.keelapi.com/?endpoint=permits)
 
 ### JavaScript
 
@@ -276,7 +242,9 @@ print(response.json())
 
 ## Response examples
 
-### Allow response
+> **Both allow and deny return HTTP 200.** Permit denials are decisions, not errors. Branch on `decision`, not on HTTP status code. This differs from execution routes, which return HTTP 403 for denials.
+
+### Allow response (HTTP 200)
 
 ```json
 {
@@ -285,10 +253,12 @@ print(response.json())
   "reason": "request_within_model_and_budget_policy",
   "actions": [
     {
-      "type": "allow"
+      "type": "allow",
+      "message": "Allowed by base policy."
     },
     {
-      "type": "report_usage"
+      "type": "report_usage",
+      "message": "Report actual token counts after execution."
     }
   ],
   "constraints": {
@@ -334,7 +304,7 @@ print(response.json())
 }
 ```
 
-### Deny response
+### Deny response (HTTP 200)
 
 ```json
 {
@@ -343,7 +313,8 @@ print(response.json())
   "reason": "model_not_permitted_for_project",
   "actions": [
     {
-      "type": "deny"
+      "type": "deny",
+      "message": "Rate limited."
     }
   ],
   "metadata": {
@@ -361,6 +332,20 @@ print(response.json())
   }
 }
 ```
+
+## `actions` array
+
+The `actions` array tells your application what to do next. Iterate it — do not ignore it.
+
+| Action type | Meaning |
+| --- | --- |
+| `allow` | Permit approved. Proceed to provider execution. |
+| `deny` | Request rejected. The action's `message` field gives the reason. |
+| `challenge` | External attestation required before execution (e.g., user confirmation, MFA). |
+| `review` | Policy review required before the request can proceed. |
+| `report_usage` | After execution, report actual token counts back via `POST /v1/permits/{permit_id}/usage`. |
+
+Each action object has `type` (string) and `message` (string). Both fields are always present — `message` is non-nullable on all action types, not just denials. A single response can contain multiple actions — for example, `allow` + `report_usage` means "proceed, then report back."
 
 ## Report usage
 
@@ -397,6 +382,124 @@ Permit responses include:
 - `decision_details` for explicit deny or challenge metadata
 - `routing` with requested and selected provider-model metadata plus reason codes
 - `metadata.policy_id`, `metadata.policy_version`, and `metadata.evaluated_at`
+
+## End-to-end permit flow
+
+Use this when your app controls the provider call and wants decision-first governance.
+
+### Step 1 — Create the permit
+
+```bash
+curl -sS -X POST https://api.keelapi.com/v1/permits \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": "<project_uuid>",
+    "idempotency_key": "flow-001",
+    "subject": {"type": "user", "id": "usr_123"},
+    "action": {"name": "ai.generate.summary"},
+    "resource": {
+      "type": "request",
+      "id": "req_flow_001",
+      "attributes": {
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "operation": "generate.text",
+        "estimated_input_tokens": 120,
+        "estimated_output_tokens": 80,
+        "max_output_tokens_requested": 120
+      }
+    }
+  }'
+```
+
+Allow response (HTTP 200):
+
+```json
+{
+  "id": "permit_01jyf4m3n8q2r6t9v1w5x7y0z",
+  "decision": "allow",
+  "reason": "request_within_model_and_budget_policy",
+  "actions": [
+    {"type": "allow", "message": "Allowed by base policy."},
+    {"type": "report_usage", "message": "Report actual token counts after execution."}
+  ]
+}
+```
+
+### Step 2 — Check the decision
+
+```ts
+const permit = await response.json()
+
+if (permit.decision !== 'allow') {
+  const denyCode = permit.decision_details?.deny_code ?? permit.reason
+  throw new Error(`blocked: ${denyCode}`)
+}
+
+// Check if usage reporting is expected
+const shouldReportUsage = permit.actions?.some((a: { type: string }) => a.type === 'report_usage')
+const permitId = permit.id
+```
+
+If `decision` is `"deny"`, do not call the provider. Read `decision_details.deny_code` for the specific reason. If `actions` contains `"challenge"` or `"review"`, handle those flows before proceeding.
+
+### Step 3 — Call the provider directly
+
+Your app uses its own provider credential for this step. Keel does not proxy the call in permit-only mode.
+
+```ts
+const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${process.env.OPENAI_API_KEY!}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: 'Summarize this document in one sentence.' }],
+    max_tokens: 120
+  })
+})
+
+const completion = await openaiResponse.json()
+const inputTokens = completion.usage?.prompt_tokens ?? 0
+const outputTokens = completion.usage?.completion_tokens ?? 0
+```
+
+### Step 4 — Report usage
+
+Report final token counts back to Keel so the permit row reflects actual usage. Skip this step only if `report_usage` was not in the `actions` array.
+
+```ts
+if (shouldReportUsage) {
+  await fetch(`https://api.keelapi.com/v1/permits/${permitId}/usage`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.KEEL_API_KEY!}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      usage: {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens
+      }
+    })
+  })
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "permit_id": "permit_01jyf4m3n8q2r6t9v1w5x7y0z",
+  "usage_recorded": true
+}
+```
+
+> If you skip usage reporting, the permit row retains the estimated token counts from Step 1. Budget enforcement in subsequent requests may use stale estimates until the next reconciliation cycle.
 
 ## Related pages
 
