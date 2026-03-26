@@ -46,6 +46,10 @@ Not supported on this public route today:
 - `realtime.session`
 - provider-native tool-calling payloads
 
+## Project scoping
+
+Project scope is inferred from your API key. Unlike `POST /v1/permits`, execution routes do not require `project_id` in the request body.
+
 ## Request shape overview
 
 | Field | Required? | Notes |
@@ -205,6 +209,9 @@ print(response.json())
 ```
 
 ## Response example
+
+`output.content` is an array of content blocks. For simple text responses, the first item (`type: 'output_text'`) contains the text.
+Future responses may include multiple blocks or different types.
 
 ```json
 {
