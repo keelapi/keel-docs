@@ -103,8 +103,9 @@ Successful sync executions return one normalized envelope:
 | `output_assets` | Produced asset metadata for asset-producing operations. |
 | `routing` | Requested and selected provider-model metadata plus routing reason. |
 | `governance` | Permit decision summary. |
-| `usage` | Final usage and cost fields plus normalized usage meters. |
+| `usage` | Final normalized usage meters. |
 | `timing` | Start, completion, and duration fields. |
+| `cost` | Final normalized cost summary. |
 | `error` | Present when the execution failed or was denied. |
 
 The HTTP response also includes Keel headers such as `x-keel-permit-id`, `x-keel-decision`, `x-keel-provider`, `x-keel-model`, `x-keel-routing-reason`, and `x-keel-firewall-result`.
@@ -201,6 +202,50 @@ response = requests.post(
 )
 
 print(response.json())
+```
+
+## Response example
+
+```json
+{
+  "id": "exec_01jv1jahqf3n9s2t4u6v8w0x1y",
+  "object": "execution",
+  "created_at": 1719866223,
+  "status": "completed",
+  "status_code": 200,
+  "output": {
+    "type": "text",
+    "content": [
+      {
+        "type": "output_text",
+        "text": "Keel evaluates policy before dispatching the request to the model."
+      }
+    ]
+  },
+  "output_assets": [],
+  "routing": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "reason": "explicit"
+  },
+  "governance": {
+    "permit_id": "permit_01jv1j9w7e2m4n6p8q0r1s2t3u",
+    "decision": "allow"
+  },
+  "timing": {
+    "total_ms": 842
+  },
+  "usage": {
+    "input_tokens": 16,
+    "output_tokens": 12,
+    "total_tokens": 28
+  },
+  "cost": {
+    "amount": 0.000022,
+    "currency": "USD"
+  },
+  "error": null
+}
 ```
 
 ## Streaming example

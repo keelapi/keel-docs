@@ -16,6 +16,22 @@ Keel gives developers two primary integration patterns:
 
 Use permit-first when your application wants the decision and will execute the provider call itself. Use the execution routes when Keel should enforce policy and call the provider in the same request path.
 
+## Permits and executions
+
+Execution routes (`/v1/executions`, `/v1/execute`, `/v1/proxy/*`) automatically evaluate permits as part of the request — you do not need to call `/v1/permits` first. Call `/v1/permits` separately only when your application owns the provider call: use it to get a policy decision, then execute against the provider directly using that permit.
+
+**Which endpoint to use:**
+
+```
+Need Keel to call the provider?
+  Yes → Already have a provider-shaped payload?
+          Yes → /v1/execute
+          No  → /v1/executions
+        Need the raw provider response?
+          Yes → /v1/proxy/*
+  No  → /v1/permits
+```
+
 ## Flow
 
 ```mermaid

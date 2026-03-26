@@ -1,84 +1,106 @@
 ---
 title: Quickstart
-description: Get your first permit decision and governed model execution in three steps.
+description: Send your first governed Keel request in under 60 seconds.
 ---
 
 # Quickstart
 
-Get your first permit decision in 60 seconds
+Send your first governed request in under 60 seconds.
 
-This quickstart shows the shortest 3-step path through the live Keel API using copy-paste-friendly requests.
+## Step 0: Set up your project
 
-## 1. Create an API key
+Open the [Keel dashboard](https://dashboard.keelapi.com).
 
-Create a project API key in Keel, then use it in the standard Bearer header:
+Do this first:
 
-```text
-Authorization: Bearer keel_sk_your_key_here
-```
+1. Create a project.
+2. Copy the project API key.
+3. Add a provider key to that same project.
 
-## 2. Send a permit request
+## Step 1: Set your API key
 
 ```bash
-curl -sS https://api.keelapi.com/v1/permits \
-  -H "Authorization: Bearer keel_sk_your_key_here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project_id": "<project_uuid>",
-    "idempotency_key": "quickstart-permit-001",
-    "subject": {
-      "type": "user",
-      "id": "usr_demo"
-    },
-    "action": {
-      "name": "ai.generate.summary"
-    },
-    "resource": {
-      "type": "request",
-      "id": "req_quickstart_001",
-      "attributes": {
-        "provider": "openai",
-        "model": "gpt-4o-mini",
-        "operation": "generate.text",
-        "modality": "text",
-        "execution_mode": "sync",
-        "estimated_input_tokens": 120,
-        "estimated_output_tokens": 80,
-        "max_output_tokens_requested": 120
-      }
-    }
-  }'
+export KEEL_API_KEY="keel_sk_live_demo_123456789"
 ```
 
-Look for a decision like `allow` and keep the returned permit metadata for audit and usage reporting.
-
-## 3. Execute a model
+## Step 2: Run one request
 
 ```bash
 curl -sS https://api.keelapi.com/v1/executions \
-  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Authorization: Bearer $KEEL_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: quickstart-exec-001" \
   -d '{
     "operation": "generate.text",
     "messages": [
-      {"role": "user", "content": "Summarize why Keel evaluated this request first."}
+      {
+        "role": "user",
+        "content": "Reply with exactly: keel works"
+      }
     ],
     "routing": {
       "provider": "openai",
       "model": "gpt-4o-mini"
     },
     "parameters": {
-      "max_output_tokens": 80
+      "max_output_tokens": 16,
+      "temperature": 0
     }
   }'
 ```
 
-That request gives you a governed model response plus routing, usage, and permit metadata in one API call.
+Example response:
 
-## Next steps
+```json
+{
+  "id": "exec_01jv1je3n6q2r5t8v0w4x7y9z1",
+  "object": "execution",
+  "created_at": 1719866401,
+  "status": "completed",
+  "status_code": 200,
+  "output": {
+    "type": "text",
+    "content": [
+      {
+        "type": "output_text",
+        "text": "keel works"
+      }
+    ]
+  },
+  "output_assets": [],
+  "routing": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "reason": "explicit"
+  },
+  "governance": {
+    "permit_id": "permit_01jv1jdym4p7s9u2w5x8y0z1a3",
+    "decision": "allow"
+  },
+  "timing": {
+    "total_ms": 512
+  },
+  "usage": {
+    "input_tokens": 11,
+    "output_tokens": 2,
+    "total_tokens": 13
+  },
+  "cost": {
+    "amount": 0.000008,
+    "currency": "USD"
+  },
+  "error": null
+}
+```
 
-- [Permits](/permits) for the decision-first contract
-- [Executions](/executions) for the canonical execution route
-- [Recipes](/recipes/guard-model-usage) for common rollout patterns
-- [Architecture](/architecture) for the runtime model
+## What just happened
+
+- Keel authenticated your project with the API key.
+- Keel evaluated a permit internally for this request.
+- Keel routed the request to the configured provider and model.
+- Keel returned one normalized response envelope with output, routing, governance, and usage.
+
+## Next
+
+- Use an official [SDK](/sdks) for app integrations.
+- If you want a decision-first integration later, start with the [permit-first flow](/permits).

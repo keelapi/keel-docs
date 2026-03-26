@@ -38,6 +38,8 @@ That default makes onboarding ergonomic, but retries without a client-supplied k
 
 ## Canonical request shape
 
+> The bearer token is project-scoped, but `POST /v1/permits` still requires `project_id` in the request body to explicitly bind the permit row to a project.
+
 ```json
 {
   "project_id": "<project_uuid>",
@@ -81,20 +83,31 @@ That default makes onboarding ergonomic, but retries without a client-supplied k
 }
 ```
 
+## Top-level fields
+
+| Field | Required? | Current meaning |
+| --- | --- | --- |
+| `project_id` | Yes | Project that owns the permit request and resulting permit row. |
+| `idempotency_key` | No | Client-supplied replay key for safe retries. |
+| `subject` | Yes | Actor the decision applies to. |
+| `action` | Yes | Requested governed action. |
+| `resource` | Yes | Request-shaped resource and execution metadata under evaluation. |
+| `context` | No | Optional request context such as timestamp, IP, or user agent. |
+
 ## `resource.attributes` fields
 
-| Field | Current meaning |
-| --- | --- |
-| `provider`, `model` | Requested provider and model identity. |
-| `operation` | Canonical governed operation such as `generate.text`, `generate.image`, or `transcribe.audio`. |
-| `modality` | Execution context label used by routing, capability metadata, and audit records. |
-| `execution_mode` | `sync`, `async`, or `realtime`. |
-| `estimated_input_tokens`, `estimated_output_tokens` | Current permit-time estimate fields. |
-| `max_output_tokens_requested` | Requested upper bound for generated output. |
-| `inputs` | Declared inputs or assets. |
-| `asset_summary` | Optional asset metadata summary. |
-| `routing` | Optional routing hints and fallback metadata. On `POST /v1/permits` these are recorded, not executed. |
-| `callback_url` | Optional callback target relevant to async execution. |
+| Field | Required? | Current meaning |
+| --- | --- | --- |
+| `provider`, `model` | Yes | Requested provider and model identity. |
+| `operation` | Yes | Canonical governed operation such as `generate.text`, `generate.image`, or `transcribe.audio`. |
+| `modality` | No | Execution context label used by routing, capability metadata, and audit records. |
+| `execution_mode` | No | `sync`, `async`, or `realtime`. |
+| `estimated_input_tokens`, `estimated_output_tokens` | No | Current permit-time estimate fields. |
+| `max_output_tokens_requested` | No | Requested upper bound for generated output. |
+| `inputs` | No | Declared inputs or assets. |
+| `asset_summary` | No | Optional asset metadata summary. |
+| `routing` | No | Optional routing hints and fallback metadata. On `POST /v1/permits` these are recorded, not executed. |
+| `callback_url` | No | Optional callback target relevant to async execution. |
 
 Compatibility note:
 
@@ -219,6 +232,94 @@ response = requests.post(
 )
 
 print(response.json())
+```
+
+## Response examples
+
+### Allow response
+
+```json
+{
+  "id": "permit_01jyf4m3n8q2r6t9v1w5x7y0z",
+  "decision": "allow",
+  "reason": "request_within_model_and_budget_policy",
+  "actions": [
+    {
+      "type": "allow"
+    },
+    {
+      "type": "report_usage"
+    }
+  ],
+  "constraints": {
+    "max_output_tokens": 300,
+    "allowed_modalities": ["text"],
+    "execution_mode": "sync"
+  },
+  "budgets": {
+    "tokens": {
+      "requested": 450,
+      "approved": 450,
+      "remaining_project_daily": 184550
+    },
+    "usd": {
+      "approved": 0.0021,
+      "remaining_project_daily": 42.73
+    }
+  },
+  "decision_details": {
+    "outcome": "policy_allow",
+    "matched_policies": [
+      "pol_text_generation_default",
+      "pol_project_daily_budget"
+    ],
+    "rule_id": "rule_allow_openai_summary_sync"
+  },
+  "routing": {
+    "requested": {
+      "provider": "openai",
+      "model": "gpt-4o-mini"
+    },
+    "selected": {
+      "provider": "openai",
+      "model": "gpt-4o-mini"
+    },
+    "reason_code": "requested_route_accepted"
+  },
+  "metadata": {
+    "policy_id": "pol_text_generation_default",
+    "policy_version": "2026-03-15",
+    "evaluated_at": "2026-03-26T18:42:11Z"
+  }
+}
+```
+
+### Deny response
+
+```json
+{
+  "id": "permit_01jyf4p6c3m7n9q2t5v8w1x4y",
+  "decision": "deny",
+  "reason": "model_not_permitted_for_project",
+  "actions": [
+    {
+      "type": "deny"
+    }
+  ],
+  "metadata": {
+    "policy_id": "pol_model_allowlist",
+    "policy_version": "2026-03-15",
+    "evaluated_at": "2026-03-26T18:43:02Z"
+  },
+  "decision_details": {
+    "outcome": "policy_deny",
+    "matched_policies": [
+      "pol_model_allowlist"
+    ],
+    "rule_id": "rule_block_unapproved_models",
+    "deny_code": "model_not_allowed"
+  }
+}
 ```
 
 ## Response shape

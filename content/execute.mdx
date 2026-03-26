@@ -183,6 +183,54 @@ response = requests.post(
 print(response.json())
 ```
 
+## Response example
+
+```json
+{
+  "id": "exec_01jv1jcm7r4p8t1u3v5w7x9y0z",
+  "object": "execution",
+  "created_at": 1719866468,
+  "status": "completed",
+  "status_code": 200,
+  "output": {
+    "type": "text",
+    "content": [
+      {
+        "type": "output_text",
+        "text": "Keel ran the request under governance and returned a normalized result."
+      }
+    ]
+  },
+  "output_assets": [],
+  "routing": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "reason": "explicit"
+  },
+  "governance": {
+    "permit_id": "permit_01jv1jbz9m2q4s6u8w0x1y3z5a",
+    "decision": "allow"
+  },
+  "timing": {
+    "total_ms": 731
+  },
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 13,
+    "total_tokens": 23
+  },
+  "cost": {
+    "amount": 0.000019,
+    "currency": "USD"
+  },
+  "error": null,
+  "resolved": {
+    "provider": "openai",
+    "model": "gpt-4o-mini"
+  }
+}
+```
+
 ## Choose `/v1/execute` vs `/v1/executions`
 
 | Concern | `/v1/execute` | `/v1/executions` |

@@ -17,7 +17,7 @@ Use the current package names:
 | Python | `pip install keel-sdk` |
 | Swift | SwiftPM package `https://github.com/sftimeless/keel-swift.git`, product `KeelSwift` |
 
-Every governed SDK call is evaluated against a permit. Create the permit in the Keel dashboard before you send the first request.
+Every governed SDK call is evaluated against the policies configured for your project. Create the policy in the Keel dashboard before you send the first request.
 
 ## 30-second Quickstart
 
@@ -27,7 +27,7 @@ Before you run this:
 
 1. Create a project API key in the Keel dashboard.
 2. Add the provider key for the same project.
-3. Create a permit in the dashboard named `quickstart-text` that allows `openai / gpt-4o-mini` for a small text request.
+3. Create a policy in the Keel dashboard that allows `openai / gpt-4o-mini` for a small text request.
 
 ```bash
 export KEEL_API_KEY="keel_sk_your_project_key"
@@ -74,19 +74,18 @@ completed
 keel works
 ```
 
-This succeeds only if the request matches the permit you created.
+This succeeds only if the request matches the policies configured for your project.
 
 What happened:
 
 - Your app authenticated with a project API key.
-- Keel evaluated the request against the permit configured for this project.
+- Keel evaluated the request against the policies configured for this project.
 - Keel used the project-scoped provider key server-side and returned a normalized response.
 
 ## What is a permit?
 
-A permit is a named policy in the Keel dashboard, for example `support-bot-prod`.
-It defines the allowed provider and model, budget limits, and routing or fallback behavior.
-Create it in the dashboard first, then send requests that match that policy.
+Policies are configured in the Keel dashboard for each project.
+Permits are the runtime allow or deny decisions Keel returns after evaluating a request.
 
 ## Supported SDKs
 
@@ -95,6 +94,8 @@ Create it in the dashboard first, then send requests that match that policy.
 | TypeScript | permit checks in Node and TypeScript services | Typed `POST /v1/permits` client, API key helpers, Express and Next middleware |
 | Python | backend services and scripts | Typed `POST /v1/permits` helper plus raw `request()` and `request_async()` for execution routes |
 | Swift | Apple platform apps and services | Typed clients for permits, `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and request timeline |
+
+Execution routes in the Python SDK currently use raw `request()` calls rather than fully typed methods.
 
 ## Integration modes
 
@@ -121,6 +122,7 @@ const permit = await client.createPermit({
     attributes: {
       provider: "openai",
       model: "gpt-4o-mini",
+      operation: "generate.text",
       estimated_input_tokens: 120,
       estimated_output_tokens: 80,
       max_output_tokens_requested: 120,
