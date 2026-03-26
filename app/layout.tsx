@@ -8,6 +8,13 @@ export const metadata: Metadata = {
     default: 'Keel Docs',
     template: '%s | Keel Docs'
   },
+  icons: {
+    icon: [
+      { url: '/favicon.ico?v=3' },
+      { url: '/favicon.svg?v=3', type: 'image/svg+xml' }
+    ],
+    apple: '/apple-touch-icon.png?v=3'
+  },
   description:
     'Keel documentation — policy enforcement and execution governance for AI systems.'
 }
