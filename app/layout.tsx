@@ -6,7 +6,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: {
     default: 'Keel Docs',
-    template: '%s | Keel Docs'
+    template: 'Keel Docs | %s'
   },
   icons: {
     icon: [
