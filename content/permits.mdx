@@ -38,6 +38,35 @@ Authorization: Bearer <project_api_key>
 
 That default makes onboarding ergonomic, but retries without a client-supplied key do not get a stable client-controlled replay contract.
 
+## Smallest useful request
+
+Start here for a first permit call. Add estimates, routing, or `context` only when your policy needs them.
+
+Keep `idempotency_key` even though it is optional in the schema. It is the smallest safe starting point for retries.
+
+```json
+{
+  "project_id": "<project_uuid>",
+  "idempotency_key": "permit-min-001",
+  "subject": {
+    "type": "user",
+    "id": "usr_123"
+  },
+  "action": {
+    "name": "ai.generate.summary"
+  },
+  "resource": {
+    "type": "request",
+    "id": "req_123",
+    "attributes": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "operation": "generate.text"
+    }
+  }
+}
+```
+
 ## Canonical request shape
 
 > The bearer token is project-scoped, but `POST /v1/permits` still requires `project_id` in the request body to explicitly bind the permit row to a project.

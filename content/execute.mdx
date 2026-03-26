@@ -105,14 +105,17 @@ The route uses the shared execution pipeline:
 
 `POST /v1/execute` returns the same normalized execution envelope shape used by `POST /v1/executions`, plus a `resolved` block.
 
-`resolved` contains the final target and any resolution metadata that applied:
+At minimum, the documented `resolved` contract includes:
 
-- `provider`
-- `model`
-- `alias`
-- `policy`
-- `health`
-- `budget`
+- `provider`: always present in the documented examples and identifies the final provider Keel targeted.
+- `model`: always present in the documented examples and identifies the final resolved model id Keel targeted.
+
+Optional `resolved` metadata may also appear when resolution logic used it:
+
+- `alias`: optional metadata that may be present when alias-based resolution contributed to the final target.
+- `policy`: optional metadata that may be present when routing-policy resolution contributed to the final target.
+- `health`: optional metadata that may be present when provider health affected candidate ordering.
+- `budget`: optional metadata that may be present when routing budget state affected resolution or fail-closed evaluation.
 
 Denied and failed results still use this normalized execution envelope. A standalone top-level `{ "error": ... }` object is reserved for request-level API failures before Keel can return an execution object.
 
@@ -138,8 +141,6 @@ curl -i -sS https://api.keelapi.com/v1/execute \
     }
   }'
 ```
-
-> Permit creation uses `idempotency_key` in the JSON body, not this header.
 
 _Test this request in the Playground:_ [Try in Playground](https://play.keelapi.com/?endpoint=execute)
 

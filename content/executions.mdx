@@ -106,6 +106,7 @@ Important caveats:
 - keys must be one of `openai`, `anthropic`, `google`, `xai`, or `meta`
 - each provider value must be an object
 - Keel blocks fields that would override the public contract, including `model`, `stream`, `max_tokens`, `max_output_tokens`, `temperature`, and `top_p`
+- treat those blocked fields as unsupported on `/v1/executions`; use top-level `routing`, `mode`, and `parameters` instead
 
 ## Response shape overview
 
@@ -386,10 +387,11 @@ const errorMessage = failed.error?.message ?? null
 
 `mode="stream"` returns Server-Sent Events from the same route.
 
-Current public guidance:
+On `/v1/executions`, the documented streaming switch is `mode: "stream"` in the request body. The provider-native `stream: true` flag belongs to provider-shaped or proxy payloads, not this provider-neutral route.
 
-- use `mode="stream"` with the OpenAI text-generation path
-- treat other providers and multimodal operations as sync unless you have verified the exact combination in your deployment
+Current public guidance is to use streaming on the OpenAI `generate.text` path. Treat other providers and multimodal operations as sync unless you have verified the exact combination in your deployment.
+
+The public stream is documented as SSE: blank-line-delimited records with `event:` and `data:` lines.
 
 SSE event names currently used by the public route:
 
@@ -400,9 +402,92 @@ SSE event names currently used by the public route:
 - `execution.error`
 - `done`
 
-```text
-event: content.delta
-data: {"id":"exec_01jv1jahqf3n9s2t4u6v8w0x1y","index":0,"delta":{"type":"output_text_delta","text":"Keel evaluates policy first."}}
+```ts
+const response = await fetch('https://api.keelapi.com/v1/executions', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${process.env.KEEL_API_KEY!}`,
+    'Content-Type': 'application/json',
+    Accept: 'text/event-stream',
+    'Idempotency-Key': 'exec-stream-001'
+  },
+  body: JSON.stringify({
+    operation: 'generate.text',
+    mode: 'stream',
+    messages: [
+      { role: 'user', content: 'Explain Keel in one short sentence.' }
+    ],
+    routing: {
+      provider: 'openai',
+      model: 'gpt-4o-mini'
+    },
+    parameters: {
+      max_output_tokens: 80
+    }
+  })
+})
+
+if (!response.ok || !response.body) {
+  throw new Error(`stream setup failed: ${response.status}`)
+}
+
+const reader = response.body.getReader()
+const decoder = new TextDecoder()
+let buffer = ''
+let text = ''
+let completed = false
+
+function handleEvent(rawEvent: string) {
+  const lines = rawEvent.split('\n')
+  let eventName = 'message'
+  const dataLines: string[] = []
+
+  for (const line of lines) {
+    if (line.startsWith('event:')) eventName = line.slice(6).trim()
+    if (line.startsWith('data:')) dataLines.push(line.slice(5).trim())
+  }
+
+  const payload = dataLines.length ? JSON.parse(dataLines.join('\n')) : null
+
+  switch (eventName) {
+    case 'execution.started':
+      console.log('stream started:', payload?.id ?? null)
+      break
+    case 'content.delta':
+      if (payload?.delta?.type === 'output_text_delta') {
+        text += payload.delta.text ?? ''
+      }
+      break
+    case 'execution.completed':
+      console.log('stream completed:', payload?.id ?? null)
+      break
+    case 'execution.denied':
+    case 'execution.error':
+      throw new Error(payload?.error?.message ?? eventName)
+    case 'done':
+      completed = true
+      break
+  }
+}
+
+while (!completed) {
+  const { value, done } = await reader.read()
+  if (done) break
+
+  buffer += decoder.decode(value, { stream: true })
+  const events = buffer.split('\n\n')
+  buffer = events.pop() ?? ''
+
+  for (const rawEvent of events) {
+    if (rawEvent.trim()) handleEvent(rawEvent)
+  }
+}
+
+if (buffer.trim()) {
+  handleEvent(buffer)
+}
+
+console.log(text)
 ```
 
 ## Multimodal example

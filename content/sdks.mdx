@@ -70,8 +70,6 @@ console.log(data.status)
 console.log(data.output?.content?.[0]?.text)
 ```
 
-> Permit creation uses `idempotency_key` in the JSON body, not this header.
-
 Expected output:
 
 ```text
@@ -181,8 +179,6 @@ console.log(execution.governance?.permit_id ?? null)
 console.log(execution.output?.content?.[0]?.text ?? null)
 ```
 
-> Permit creation uses `idempotency_key` in the JSON body, not this header.
->
 > Execution routes infer project context from the project API key and do not require `project_id` in the request body.
 
 ### Provider-shaped execution: `/v1/execute`
@@ -217,8 +213,6 @@ console.log(execution.resolved?.provider ?? null)
 console.log(execution.output?.content?.[0]?.text ?? null)
 ```
 
-> Permit creation uses `idempotency_key` in the JSON body, not this header.
->
 > Execution routes infer project context from the project API key and do not require `project_id` in the request body.
 
 ### Provider-native proxy: `/v1/proxy/*`
@@ -249,8 +243,6 @@ console.log(proxyData.model)
 console.log(proxyData.choices?.[0]?.message?.content ?? null)
 ```
 
-> Permit creation uses `idempotency_key` in the JSON body, not this header.
->
 > Proxy routes return provider-native responses, not the normalized execution envelope.
 
 ## Common patterns

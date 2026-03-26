@@ -15,9 +15,9 @@ Do not assume a single universal error envelope across permit, execution, proxy,
 
 ## Error shapes by surface
 
-| Surface | Typical non-2xx shape | Parse path | Notes |
+| Surface | Typical result shape | Parse path | Notes |
 | --- | --- | --- | --- |
-| `POST /v1/permits` deny decision | Permit object, usually not a top-level error object | `decision`, `reason`, `decision_details.deny_code` | Permit denial is decision data. Parse the permit object, not `{ error: ... }`. |
+| `POST /v1/permits` deny decision | Permit object, usually not a top-level error object | `decision`, `reason`, `decision_details.deny_code` | Permit denials are decision results, not execution failures, and do not include an `error` object. |
 | `POST /v1/executions` denied response | Normalized execution envelope with `status: "denied"` and `error` | `status`, `governance.permit_id`, `error.code`, `error.message` | Denied executions stay inside the normalized execution envelope. |
 | `POST /v1/executions` failed response | Normalized execution envelope with `status: "failed"` and `error` | `status`, `governance.permit_id`, `error.code`, `error.message` | Provider or downstream execution failures still return an execution object. |
 | `POST /v1/execute` denied or failed response | Normalized execution envelope with `error`, plus `resolved` | `status`, `governance.permit_id`, `error.code`, `error.message`, `resolved` | Same parsing model as `/v1/executions`, with one extra `resolved` block. |
@@ -30,10 +30,11 @@ For the execution routes:
 - A failed `/v1/executions` response is a normalized execution envelope with `status: "failed"`.
 - A transport, framework, or top-level API error is a standalone `{ "error": ... }` object because no execution envelope was created.
 - A provider proxy error is provider-native, not normalized.
+- Permit denials are decision results, not execution failures, and do not include an `error` object.
 
 ## Examples by surface
 
-<!-- TODO(backend-confirmation): Confirm whether denied permit responses are always HTTP 200 on the public route. The current docs treat permit denial as decision data rather than a transport error. -->
+The permit decision examples below reflect the current documented contract for permit decisions.
 
 ### `/v1/permits` deny
 
@@ -65,7 +66,34 @@ HTTP status: `200`
 }
 ```
 
-Parsing note: read permit denial from `decision` and `decision_details.deny_code`; do not expect a top-level `{ "error": ... }` object for a normal deny decision.
+Parsing note: Permit denials are decision results, not execution failures, and do not include an `error` object. Read `decision`, `reason` if present, and `decision_details.deny_code`; do not expect `error.code`.
+
+### `/v1/permits` allow
+
+HTTP status: `200`
+
+```json
+{
+  "id": "permit_01jyf4m3n8q2r6t9v1w5x7y0z",
+  "decision": "allow",
+  "reason": "request_within_model_and_budget_policy",
+  "actions": [
+    {
+      "type": "allow"
+    },
+    {
+      "type": "report_usage"
+    }
+  ],
+  "constraints": {
+    "max_output_tokens": 300,
+    "allowed_modalities": ["text"],
+    "execution_mode": "sync"
+  }
+}
+```
+
+Parsing note: Allow decisions are permit results too. Parse `decision` and `reason`; do not expect `error.code`. For the fuller allow response, see [Permits](/permits#response-examples).
 
 ### `/v1/executions` denied response
 
@@ -239,7 +267,7 @@ Parsing note: when the response is top-level `{ "error": ... }`, no normalized e
 
 Usual status means the documented status you should plan for in client logic, not an exhaustive guarantee for every deployment detail.
 
-On `/v1/permits`, deny codes live in `decision_details.deny_code` rather than `error.code`.
+On `/v1/permits`, parse `decision`, `reason` if present, and `decision_details.deny_code`; do not expect `error.code`.
 
 | HTTP status | Code | Surface(s) | Retryable? | Meaning |
 | --- | --- | --- | --- | --- |
