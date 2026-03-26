@@ -5,7 +5,11 @@ description: Provider-native execution routes for Keel-managed requests.
 
 # Proxy Execution
 
+Provider-native execution routes for Keel-managed requests.
+
 Use these routes when Keel should execute the provider request and record usage in the same path.
+
+Need to choose between execution surfaces first? See the [route comparison in Quickstart](/quickstart#route-comparison).
 
 ## Official public proxy routes
 
@@ -18,6 +22,8 @@ Use these routes when Keel should execute the provider request and record usage 
 | `POST /v1/proxy/meta` | Non-stream text plus an image-understanding subset; `metadata.adapter_mode` selects `native`, `compatible`, or `byo`. |
 
 These routes remain provider-specific. Keel still does not expose a provider-neutral request shape here. Use [`POST /v1/executions`](/executions) when you want one canonical execution contract instead of provider-native payloads and provider-native responses.
+
+> Execution routes infer project context from the project API key and do not require `project_id` in the request body.
 
 ## What the proxy path does
 
@@ -65,6 +71,12 @@ curl -i -sS https://api.keelapi.com/v1/proxy/openai \
     "max_tokens": 200
   }'
 ```
+
+> Proxy routes return provider-native responses, not the normalized execution envelope.
+>
+> Permit creation uses `idempotency_key` in the JSON body, not this header.
+>
+> Need the route matrix? See [Route comparison](/quickstart#route-comparison).
 
 _Test this request in the Playground:_ [Try in Playground](https://play.keelapi.com/?endpoint=proxy-openai)
 
@@ -144,14 +156,17 @@ print(response.json())
 }
 ```
 
-## `/v1/executions` vs proxy routes
+```ts
+const requestId = data.id
+const model = data.model
+const text = data.choices?.[0]?.message?.content ?? null
+const finishReason = data.choices?.[0]?.finish_reason ?? null
+const providerErrorMessage = data.error?.message ?? null
+```
 
-| Concern | `/v1/executions` | `/v1/proxy/*` |
-| --- | --- | --- |
-| Request shape | Canonical, provider-neutral | Provider-native |
-| Response shape | Normalized execution envelope | Provider-native provider response |
-| Best fit | Portable integrations | Provider-specific parity and provider-native payload control |
-| Streaming shape | Keel SSE event stream | Provider-specific streaming semantics |
+## Related route guidance
+
+For the canonical route matrix, see [Route comparison](/quickstart#route-comparison).
 
 ## Routing boundary
 

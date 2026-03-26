@@ -7,6 +7,15 @@ description: Retry and replay semantics across Keel's public decision and execut
 
 Keel documents idempotency separately for the canonical permit flow and the execution routes.
 
+## At a glance
+
+| Route family | Where idempotency goes |
+| --- | --- |
+| `POST /v1/permits` | JSON body `idempotency_key` |
+| `POST /v1/executions` | `Idempotency-Key` header |
+| `POST /v1/execute` | `Idempotency-Key` header |
+| `POST /v1/proxy/*` | `Idempotency-Key` header |
+
 ## Permit idempotency
 
 Route:

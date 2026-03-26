@@ -23,6 +23,24 @@ Do this first:
 export KEEL_API_KEY="keel_sk_live_demo_123456789"
 ```
 
+## Which route should I use?
+
+- Use `/v1/permits` when you want decision-first governance and your app will execute the provider call itself.
+- Use `/v1/executions` when you want Keel to execute and your request is provider-neutral.
+- Use `/v1/execute` when you want Keel to execute and your request is provider-shaped.
+- Use `/v1/proxy/*` when you want provider-native payloads and provider-native responses.
+
+If you are new to Keel, start with `/v1/executions` unless you specifically need permit-first, provider-shaped input, or provider-native proxy behavior.
+
+## Route comparison
+
+| Route | Use when | Request shape | Response shape | Who executes provider call | Typical first-time user? | Idempotency location |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/v1/permits` | You want decision-first governance and your app will call the provider itself. | Canonical permit body with `project_id`, `subject`, `action`, and `resource`. | Permit decision object only. | Your app | Sometimes, for permit-first integrations | JSON body `idempotency_key` |
+| `/v1/executions` | You want Keel to execute and your request is provider-neutral. | Canonical operation plus `messages` or `inputs`. | Normalized execution envelope. | Keel | Yes | `Idempotency-Key` header |
+| `/v1/execute` | You want Keel to execute and your request is provider-shaped. | Provider-shaped body with `provider`, `model`, and `input`. | Normalized execution envelope plus `resolved`. | Keel | Sometimes, when you already have provider-shaped input | `Idempotency-Key` header |
+| `/v1/proxy/*` | You want provider-native payloads and provider-native responses. | Provider-native payload. | Provider-native response. | Keel | Usually no, unless you need provider parity | `Idempotency-Key` header |
+
 ## Step 2: Run one request
 
 ```bash
@@ -48,6 +66,8 @@ curl -sS https://api.keelapi.com/v1/executions \
     }
   }'
 ```
+
+> Permit creation uses `idempotency_key` in the JSON body, not this header.
 
 Example response:
 
@@ -96,7 +116,7 @@ Example response:
 ## What just happened
 
 - Keel authenticated your project with the API key.
-- Keel evaluated a permit internally for this request.
+- Keel evaluated a permit internally for this request. Permit evaluation remains the canonical governance seam even when you call an execution route.
 - Keel routed the request to the configured provider and model.
 - Keel returned one normalized response envelope with output, routing, governance, and usage.
 
@@ -104,3 +124,12 @@ Example response:
 
 - Use an official [SDK](/sdks) for app integrations.
 - If you want a decision-first integration later, start with the [permit-first flow](/permits).
+- If you want the full route matrix later, come back to [Route comparison](#route-comparison).
+
+## Acceptance checks
+
+- I know which route to start with.
+- I know whether Keel or my app executes the provider call.
+- I know whether the response is normalized or provider-native.
+- I know where to put idempotency.
+- I know how errors are shaped.

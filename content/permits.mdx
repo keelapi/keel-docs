@@ -7,6 +7,8 @@ description: Canonical permit contract for decision-first Keel integrations.
 
 Use this API when you want Keel to evaluate a request, persist the decision, and let your application decide what to do next.
 
+> Permit creation requires `project_id` in the body.
+
 ## Route summary
 
 | Route | Status | Purpose |
@@ -83,6 +85,8 @@ That default makes onboarding ergonomic, but retries without a client-supplied k
 }
 ```
 
+> Execution routes do not use this body field. Use the `Idempotency-Key` header instead.
+
 ## Top-level fields
 
 | Field | Required? | Current meaning |
@@ -92,7 +96,7 @@ That default makes onboarding ergonomic, but retries without a client-supplied k
 | `subject` | Yes | Actor the decision applies to. |
 | `action` | Yes | Requested governed action. |
 | `resource` | Yes | Request-shaped resource and execution metadata under evaluation. |
-| `context` | No | Optional request context such as timestamp, IP, or user agent. |
+| `context` | No | Optional request context such as timestamp, IP, or user agent. This public top-level field is permit-only. |
 
 ## `resource.attributes` fields
 
@@ -109,6 +113,11 @@ That default makes onboarding ergonomic, but retries without a client-supplied k
 | `routing` | No | Optional routing hints and fallback metadata. On `POST /v1/permits` these are recorded, not executed. |
 | `callback_url` | No | Optional callback target relevant to async execution. |
 
+## `routing` and `context` on permits
+
+- On permits, `resource.attributes.routing` is governance intent and recorded decision context. It can influence policy evaluation and audit records, but `POST /v1/permits` does not dispatch provider work or execute fallback.
+- `context` exists on permits as a public top-level request field. Execution routes do not expose a public top-level `context` field.
+
 Compatibility note:
 
 - canonical docs prefer `resource.attributes.*`
@@ -122,6 +131,8 @@ Compatibility note:
 - it does not replace `POST /v1/executions`, `POST /v1/execute`, or the provider-specific proxy routes
 
 ## API example
+
+> Execution routes do not use this body field. Use the `Idempotency-Key` header instead.
 
 ### curl
 

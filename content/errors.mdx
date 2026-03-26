@@ -1,6 +1,6 @@
 ---
 title: Errors
-description: Stable minimum error contracts across Keel's public runtime surfaces.
+description: Error shapes, status codes, and retry guidance across Keel's public runtime surfaces.
 ---
 
 # Errors
@@ -8,86 +8,272 @@ description: Stable minimum error contracts across Keel's public runtime surface
 Stable minimums to depend on across Keel's public runtime surfaces:
 
 - HTTP status code
-- `error.code`
-- `error.message`
+- machine-readable code
+- human-readable message
 
-Do not assume a single universal error envelope across permit, execution, proxy, gateway, and dashboard helper routes beyond those minimums.
+Do not assume a single universal error envelope across permit, execution, proxy, and request-level API failures.
 
-## Common permit errors
+## Error shapes by surface
 
-- `400 invalid_request`
-- `401 unauthorized`
-- `403 forbidden`
-- `403 insufficient_scope`
-- `404 not_found`
-- `409 conflict`
-- `500 internal_error`
+| Surface | Typical non-2xx shape | Parse path | Notes |
+| --- | --- | --- | --- |
+| `POST /v1/permits` deny decision | Permit object, usually not a top-level error object | `decision`, `reason`, `decision_details.deny_code` | Permit denial is decision data. Parse the permit object, not `{ error: ... }`. |
+| `POST /v1/executions` denied response | Normalized execution envelope with `status: "denied"` and `error` | `status`, `governance.permit_id`, `error.code`, `error.message` | Denied executions stay inside the normalized execution envelope. |
+| `POST /v1/executions` failed response | Normalized execution envelope with `status: "failed"` and `error` | `status`, `governance.permit_id`, `error.code`, `error.message` | Provider or downstream execution failures still return an execution object. |
+| `POST /v1/execute` denied or failed response | Normalized execution envelope with `error`, plus `resolved` | `status`, `governance.permit_id`, `error.code`, `error.message`, `resolved` | Same parsing model as `/v1/executions`, with one extra `resolved` block. |
+| Transport, framework, or top-level API error | Top-level `{ "error": { ... } }` object | `error.code`, `error.message`, `error.details` | Use this shape for validation, auth, not-found, idempotency-conflict, and similar request-level failures before an execution object exists. |
+| `POST /v1/proxy/*` provider proxy error | Provider-native error object | Provider-native path such as `error.message` | Proxy routes do not return the normalized execution envelope. Parse them the same way you would parse the provider directly. |
 
-## Common execution and proxy errors
+For the execution routes:
 
-- `unauthorized`
-- `insufficient_scope`
-- `provider_key_not_configured`
-- `idempotency_conflict` or `conflict`
-- `prompt_firewall_blocked`
+- A denied `/v1/executions` response is a normalized execution envelope with `status: "denied"`.
+- A failed `/v1/executions` response is a normalized execution envelope with `status: "failed"`.
+- A transport, framework, or top-level API error is a standalone `{ "error": ... }` object because no execution envelope was created.
+- A provider proxy error is provider-native, not normalized.
 
-Cost-governor execution denials also include machine-readable detail in `error.details`.
+## Examples by surface
 
-## Cost-governor denial codes
+<!-- TODO(backend-confirmation): Confirm whether denied permit responses are always HTTP 200 on the public route. The current docs treat permit denial as decision data rather than a transport error. -->
 
-- `daily_budget_exceeded`
-- `monthly_budget_exceeded`
-- `request_cost_exceeded`
-- `pricing_not_configured`
+### `/v1/permits` deny
 
-## Budget guardrail denial codes
+HTTP status: `200`
 
-- `budget_guardrail_daily_spike_exceeded`
-- `budget_guardrail_monthly_threshold_exceeded`
-- `budget_guardrail_rate_exceeded`
-- `budget_guardrail_rate_throttled`
+```json
+{
+  "id": "permit_01jyf4p6c3m7n9q2t5v8w1x4y",
+  "decision": "deny",
+  "reason": "model_not_permitted_for_project",
+  "actions": [
+    {
+      "type": "deny"
+    }
+  ],
+  "metadata": {
+    "policy_id": "pol_model_allowlist",
+    "policy_version": "2026-03-15",
+    "evaluated_at": "2026-03-26T18:43:02Z"
+  },
+  "decision_details": {
+    "outcome": "policy_deny",
+    "matched_policies": [
+      "pol_model_allowlist"
+    ],
+    "rule_id": "rule_block_unapproved_models",
+    "deny_code": "model_not_allowed"
+  }
+}
+```
 
-`budget_guardrail_rate_throttled` is returned as HTTP `429` on execution surfaces. The other guardrail denials are returned as HTTP `403`.
+Parsing note: read permit denial from `decision` and `decision_details.deny_code`; do not expect a top-level `{ "error": ... }` object for a normal deny decision.
 
-## Routing budget enforcement codes
+### `/v1/executions` denied response
 
-- `budget_exceeded`
-- `budget_threshold_missing`
-- `pricing_not_configured`
-- `token_estimation_unavailable`
-- `budget_estimation_unavailable`
+HTTP status: `403`
 
-`POST /v1/execute` can return these when alias-based routing budget enforcement is active and Keel must fail closed before selecting a target.
+```json
+{
+  "id": "exec_01jv1jahqf3n9s2t4u6v8w0x1z",
+  "object": "execution",
+  "created_at": 1719866224,
+  "status": "denied",
+  "status_code": 403,
+  "output": null,
+  "output_assets": [],
+  "routing": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "reason": "explicit"
+  },
+  "governance": {
+    "permit_id": "permit_01jv1j9w7e2m4n6p8q0r1s2t3v",
+    "decision": "deny"
+  },
+  "timing": {
+    "total_ms": 19
+  },
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  },
+  "cost": {
+    "amount": 0,
+    "currency": "USD"
+  },
+  "error": {
+    "code": "policy_denied",
+    "message": "The request did not satisfy the configured project policy."
+  }
+}
+```
 
-## Prompt Firewall denials
+Parsing note: parse `status`, `governance.permit_id`, and `error.code`; denial is still an execution envelope.
 
-On prompt-carrying execution routes, Prompt Firewall V1 uses:
+### `/v1/executions` execution failure
 
-- `error.code = prompt_firewall_blocked`
+HTTP status: `502`
 
-and includes matched-rule metadata in `error.details`.
+```json
+{
+  "id": "exec_01jv1jahqf3n9s2t4u6v8w0x20",
+  "object": "execution",
+  "created_at": 1719866225,
+  "status": "failed",
+  "status_code": 502,
+  "output": null,
+  "output_assets": [],
+  "routing": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "reason": "explicit"
+  },
+  "governance": {
+    "permit_id": "permit_01jv1j9w7e2m4n6p8q0r1s2t3w",
+    "decision": "allow"
+  },
+  "timing": {
+    "total_ms": 611
+  },
+  "usage": {
+    "input_tokens": 16,
+    "output_tokens": 0,
+    "total_tokens": 16
+  },
+  "cost": {
+    "amount": 0.00001,
+    "currency": "USD"
+  },
+  "error": {
+    "code": "provider_error",
+    "message": "The upstream provider request failed after permit approval."
+  }
+}
+```
 
-## Example error response
+Parsing note: treat this like a completed execution record with `status: "failed"` and read the failure from `error`.
+
+### `/v1/execute` denied response
+
+HTTP status: `403`
+
+```json
+{
+  "id": "exec_01jv1jcm7r4p8t1u3v5w7x9y10",
+  "object": "execution",
+  "created_at": 1719866469,
+  "status": "denied",
+  "status_code": 403,
+  "output": null,
+  "output_assets": [],
+  "routing": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "reason": "explicit"
+  },
+  "governance": {
+    "permit_id": "permit_01jv1jbz9m2q4s6u8w0x1y3z5b",
+    "decision": "deny"
+  },
+  "timing": {
+    "total_ms": 17
+  },
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  },
+  "cost": {
+    "amount": 0,
+    "currency": "USD"
+  },
+  "error": {
+    "code": "policy_denied",
+    "message": "The request did not satisfy the configured project policy."
+  },
+  "resolved": {
+    "provider": "openai",
+    "model": "gpt-4o-mini"
+  }
+}
+```
+
+Parsing note: parse `/v1/execute` denials exactly like `/v1/executions`, then read `resolved` if you need the final target metadata.
+
+### `/v1/proxy/openai` provider-style error
+
+HTTP status: `400`
 
 ```json
 {
   "error": {
-    "code": "daily_budget_exceeded",
-    "message": "Daily budget exceeded for this project.",
+    "message": "Unsupported parameter: 'max_completion_tokens'.",
+    "type": "invalid_request_error",
+    "param": "max_completion_tokens",
+    "code": "unsupported_parameter"
+  }
+}
+```
+
+Parsing note: parse this as an OpenAI-style provider error, not as a Keel execution envelope.
+
+### Generic top-level API error object
+
+HTTP status: `409`
+
+```json
+{
+  "error": {
+    "code": "idempotency_conflict",
+    "message": "The same idempotency key was already used with a different semantic request.",
     "details": {
-      "budget_period": "day",
-      "limit_usd": "25.00",
-      "current_usage_usd": "25.73"
+      "idempotency_key": "exec-sync-001"
     }
   }
 }
 ```
 
+Parsing note: when the response is top-level `{ "error": ... }`, no normalized execution object was created.
+
+## Status and retry matrix
+
+Usual status means the documented status you should plan for in client logic, not an exhaustive guarantee for every deployment detail.
+
+On `/v1/permits`, deny codes live in `decision_details.deny_code` rather than `error.code`.
+
+| HTTP status | Code | Surface(s) | Retryable? | Meaning |
+| --- | --- | --- | --- | --- |
+| `200` | `model_not_allowed` | Permits deny decision | No | The permit was denied because the requested model is not allowed for the project. |
+| `400` | `invalid_request` | Permits, executions, execute, proxy, request-level API | No | The request body, headers, or field combination is invalid. |
+| `401` | `unauthorized` | Permits, executions, execute, proxy, request-level API | Conditionally | Missing or invalid credentials. Retry only after fixing auth. |
+| `403` | `forbidden` | Permits, request-level API | No | The caller is authenticated but not allowed to use the route or resource. |
+| `403` | `insufficient_scope` | Permits, executions, execute, proxy, request-level API | No | The credential does not have the required scope. |
+| `403` | `policy_denied` | Executions, execute | No | Keel evaluated the permit seam and denied the request. |
+| `403` | `provider_key_not_configured` | Executions, execute, proxy | No | The project does not have the required provider key configured. |
+| `403` | `prompt_firewall_blocked` | Executions, execute, proxy | No | Prompt Firewall blocked the request before provider dispatch. |
+| `403` | `daily_budget_exceeded` | Executions, execute | No | The request would exceed the project's daily budget. |
+| `403` | `monthly_budget_exceeded` | Executions, execute | No | The request would exceed the project's monthly budget. |
+| `403` | `request_cost_exceeded` | Executions, execute | No | The single request exceeds the allowed cost ceiling. |
+| `403` | `pricing_not_configured` | Executions, execute | No | Keel cannot evaluate required pricing data for the request or routing policy. |
+| `403` | `budget_guardrail_daily_spike_exceeded` | Executions, execute | No | A daily spike guardrail blocked the request. |
+| `403` | `budget_guardrail_monthly_threshold_exceeded` | Executions, execute | No | A monthly threshold guardrail blocked the request. |
+| `403` | `budget_guardrail_rate_exceeded` | Executions, execute | No | A rate guardrail was exceeded and the route failed closed. |
+| `429` | `budget_guardrail_rate_throttled` | Executions, execute | Yes | A rate guardrail throttled the request. Retry with backoff. |
+| `403` | `budget_exceeded` | Execute | No | Alias-based routing budget enforcement rejected the request. |
+| `403` | `budget_threshold_missing` | Execute | No | A required routing budget threshold was missing. |
+| `403` | `token_estimation_unavailable` | Execute | No | Keel could not estimate tokens needed for fail-closed routing. |
+| `403` | `budget_estimation_unavailable` | Execute | No | Keel could not estimate cost needed for fail-closed routing. |
+| `404` | `not_found` | Permits, request-level API | No | The requested resource does not exist for this project or route. |
+| `409` | `conflict` | Permits, executions, execute, request-level API | No | The request conflicts with an existing resource or replay contract. |
+| `409` | `idempotency_conflict` | Executions, execute, proxy, request-level API | No | The same idempotency key was reused with a different semantic request. |
+| `500` | `internal_error` | Permits, executions, execute, proxy, request-level API | Yes | Keel failed internally before producing a more specific result. |
+| `502` | `provider_error` | Executions, execute | Yes | The upstream provider request failed after permit approval. |
+
 ## Related pages
 
-- [API Reference](/api-reference)
+- [Quickstart](/quickstart)
 - [Permits](/permits)
 - [Executions](/executions)
 - [Execute](/execute)
 - [Proxy Execution](/proxy-execution)
-- [Security](/security)
+- [Idempotency](/idempotency)

@@ -5,7 +5,11 @@ description: Provider-neutral execution contract for governed Keel requests.
 
 # Executions
 
+Provider-neutral execution for governed Keel requests.
+
 Use `POST /v1/executions` when you want Keel to execute a governed request through one public, provider-neutral request shape. You send a canonical operation plus `messages` or `inputs`, Keel evaluates the permit, applies execution-time controls, resolves the provider and model target, executes the request, and returns a normalized execution envelope.
+
+Need to choose between execution surfaces first? See the [route comparison in Quickstart](/quickstart#route-comparison).
 
 ## Route summary
 
@@ -48,6 +52,8 @@ Not supported on this public route today:
 
 ## Project scoping
 
+> Execution routes infer project context from the project API key and do not require `project_id` in the request body.
+
 Project scope is inferred from your API key. Unlike `POST /v1/permits`, execution routes do not require `project_id` in the request body.
 
 ## Request shape overview
@@ -84,6 +90,15 @@ Important caveats:
 - cross-provider fallback is explicit and request-scoped
 - if you want fallback, send `routing.allow_cross_provider_fallback=true` and a concrete `routing.fallback_chain`
 
+`routing` does not mean the same thing on every surface:
+
+- On permits, routing is governance intent and recorded decision context.
+- On `/v1/executions`, routing is applied to actual provider and model selection and dispatch.
+
+### `context`
+
+`POST /v1/executions` does not expose a public top-level `context` field. Use the documented execution fields in the request body; Keel records execution metadata from the authenticated request and execution pipeline instead of accepting permit-style `context`.
+
 ### `provider_options`
 
 `provider_options` is for advanced passthrough only.
@@ -112,6 +127,8 @@ Successful sync executions return one normalized envelope:
 | `cost` | Final normalized cost summary. |
 | `error` | Present when the execution failed or was denied. |
 
+Denied and failed execution results stay inside this normalized execution envelope. A standalone top-level `{ "error": ... }` object is for request-level API failures before Keel can return an execution object.
+
 The HTTP response also includes Keel headers such as `x-keel-permit-id`, `x-keel-decision`, `x-keel-provider`, `x-keel-model`, `x-keel-routing-reason`, and `x-keel-firewall-result`.
 
 ## API example
@@ -139,6 +156,8 @@ curl -i -sS https://api.keelapi.com/v1/executions \
     }
   }'
 ```
+
+> Permit creation uses `idempotency_key` in the JSON body, not this header.
 
 _Test this request in the Playground:_ [Try in Playground](https://play.keelapi.com/?endpoint=executions)
 
@@ -255,6 +274,16 @@ Future responses may include multiple blocks or different types.
 }
 ```
 
+```ts
+const requestId = data.id
+const status = data.status
+const permitId = data.governance?.permit_id ?? null
+const text =
+  data.output?.content?.find(block => block.type === 'output_text')?.text ?? null
+const errorCode = data.error?.code ?? null
+const errorMessage = data.error?.message ?? null
+```
+
 ## Error response examples
 
 ### Denied
@@ -290,9 +319,19 @@ Future responses may include multiple blocks or different types.
     "currency": "USD"
   },
   "error": {
-    "code": "policy_denied"
+    "code": "policy_denied",
+    "message": "The request did not satisfy the configured project policy."
   }
 }
+```
+
+```ts
+const requestId = denied.id
+const status = denied.status
+const permitId = denied.governance?.permit_id ?? null
+const text = denied.output?.content?.find(block => block.type === 'output_text')?.text ?? null
+const errorCode = denied.error?.code ?? null
+const errorMessage = denied.error?.message ?? null
 ```
 
 ### Failed
@@ -328,9 +367,19 @@ Future responses may include multiple blocks or different types.
     "currency": "USD"
   },
   "error": {
-    "code": "provider_error"
+    "code": "provider_error",
+    "message": "The upstream provider request failed after permit approval."
   }
 }
+```
+
+```ts
+const requestId = failed.id
+const status = failed.status
+const permitId = failed.governance?.permit_id ?? null
+const text = failed.output?.content?.find(block => block.type === 'output_text')?.text ?? null
+const errorCode = failed.error?.code ?? null
+const errorMessage = failed.error?.message ?? null
 ```
 
 ## Streaming example
@@ -393,15 +442,9 @@ curl -i -sS https://api.keelapi.com/v1/executions \
   }'
 ```
 
-## `/v1/executions` vs `/v1/proxy/*`
+## Related route guidance
 
-| Concern | `/v1/executions` | `/v1/proxy/*` |
-| --- | --- | --- |
-| Request shape | Canonical, provider-neutral | Provider-native |
-| Route selection | One route for supported providers and operations | One route per provider |
-| Response shape | Normalized execution envelope | Provider-native response body |
-| Streaming shape | Keel SSE events | Provider-specific streaming semantics |
-| Best fit | Portable integrations and faster onboarding | Existing provider payload parity and provider-specific control |
+For the canonical route matrix, see [Route comparison](/quickstart#route-comparison).
 
 ## Related pages
 
