@@ -13,6 +13,7 @@ const meta = {
   overview: 'Overview',
   'why-keel': 'Why Keel',
   quickstart: 'Quickstart',
+  sdks: 'SDKs',
   'what-is-keel': 'What Is Keel',
   recipes: {
     title: 'Recipes'

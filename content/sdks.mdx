@@ -1,0 +1,442 @@
+---
+title: SDKs
+description: Install a Keel SDK and send a governed request with the least possible setup.
+---
+
+# SDKs
+
+Install a Keel SDK and send a governed request in under 2 minutes.
+
+## Install
+
+Use the current package names:
+
+| SDK | Install |
+| --- | --- |
+| TypeScript | `npm install @keel/sdk` |
+| Python | `pip install keel-sdk` |
+| Swift | SwiftPM package `https://github.com/sftimeless/keel-swift.git`, product `KeelSwift` |
+
+Every governed SDK call is evaluated against a permit. Create the permit in the Keel dashboard before you send the first request.
+
+## 30-second Quickstart
+
+Use the Python SDK for the shortest working path today.
+
+Before you run this:
+
+1. Create a project API key in the Keel dashboard.
+2. Add the provider key for the same project.
+3. Create a permit in the dashboard named `quickstart-text` that allows `openai / gpt-4o-mini` for a small text request.
+
+```bash
+export KEEL_API_KEY="keel_sk_your_project_key"
+```
+
+```python
+import os
+from keel_sdk import KeelClient
+
+client = KeelClient(
+    base_url="https://api.keelapi.com",
+    api_key=os.environ["KEEL_API_KEY"],
+)
+
+response = client.request(
+    "POST",
+    "/v1/execute",
+    headers={"Idempotency-Key": "sdk-quickstart-001"},
+    json={
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "input": {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Reply with exactly: keel works"
+                }
+            ],
+            "max_tokens": 16
+        }
+    },
+)
+
+print(response["status"])
+print(response["output"]["content"][0]["text"])
+
+client.close()
+```
+
+Expected output:
+
+```text
+completed
+keel works
+```
+
+This succeeds only if the request matches the permit you created.
+
+What happened:
+
+- Your app authenticated with a project API key.
+- Keel evaluated the request against the permit configured for this project.
+- Keel used the project-scoped provider key server-side and returned a normalized response.
+
+## What is a permit?
+
+A permit is a named policy in the Keel dashboard, for example `support-bot-prod`.
+It defines the allowed provider and model, budget limits, and routing or fallback behavior.
+Create it in the dashboard first, then send requests that match that policy.
+
+## Supported SDKs
+
+| SDK | Best for | Current surface |
+| --- | --- | --- |
+| TypeScript | permit checks in Node and TypeScript services | Typed `POST /v1/permits` client, API key helpers, Express and Next middleware |
+| Python | backend services and scripts | Typed `POST /v1/permits` helper plus raw `request()` and `request_async()` for execution routes |
+| Swift | Apple platform apps and services | Typed clients for permits, `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and request timeline |
+
+## Integration modes
+
+### Permit-only
+
+Use this when your app wants a policy decision first and will call the provider itself.
+
+```ts
+import { KeelClient } from "@keel/sdk";
+
+const client = new KeelClient({
+  baseUrl: "https://api.keelapi.com",
+  apiKey: process.env.KEEL_API_KEY!,
+});
+
+const permit = await client.createPermit({
+  project_id: process.env.KEEL_PROJECT_ID!,
+  idempotency_key: "permit-only-001",
+  subject: { type: "user", id: "usr_123" },
+  action: { name: "ai.generate.summary" },
+  resource: {
+    type: "request",
+    id: "req_123",
+    attributes: {
+      provider: "openai",
+      model: "gpt-4o-mini",
+      estimated_input_tokens: 120,
+      estimated_output_tokens: 80,
+      max_output_tokens_requested: 120,
+    },
+  },
+});
+
+if (permit.decision !== "allow") {
+  throw new Error(`blocked: ${permit.reason}`);
+}
+```
+
+### Canonical execution: `/v1/executions`
+
+Use this when you want one provider-neutral request shape across providers.
+
+```swift
+import KeelSwift
+
+let client = try KeelClient(
+    baseURL: "https://api.keelapi.com",
+    apiKey: ProcessInfo.processInfo.environment["KEEL_API_KEY"]!
+)
+
+let execution = try await client.executions.create(
+    ExecutionCreateRequest(
+        operation: .generateText,
+        messages: [
+            ExecutionMessage(role: .user, content: "Reply in one short sentence.")
+        ],
+        routing: ExecutionRoutingInput(
+            provider: .openai,
+            model: "gpt-4o-mini"
+        ),
+        parameters: ExecutionParameters(maxOutputTokens: 80)
+    ),
+    options: RequestOptions(idempotencyKey: "executions-001")
+)
+
+print(execution.textOutput ?? "")
+```
+
+### Unified execute: `/v1/execute`
+
+Use this when you already have a provider-shaped input payload but still want a normalized Keel response.
+
+```python
+from keel_sdk import KeelClient
+
+client = KeelClient(
+    base_url="https://api.keelapi.com",
+    api_key="keel_sk_your_project_key",
+)
+
+response = client.request(
+    "POST",
+    "/v1/execute",
+    headers={"Idempotency-Key": "execute-001"},
+    json={
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "input": {
+            "messages": [
+                {"role": "user", "content": "Reply with one sentence."}
+            ],
+            "max_tokens": 80
+        }
+    },
+)
+
+print(response["status"])
+print(response["output"]["content"][0]["text"])
+
+client.close()
+```
+
+### Proxy: `/v1/proxy/*`
+
+Use this when you need the provider's native request and response shape.
+
+```swift
+import KeelSwift
+
+let client = try KeelClient(
+    baseURL: "https://api.keelapi.com",
+    apiKey: ProcessInfo.processInfo.environment["KEEL_API_KEY"]!
+)
+
+let response = try await client.proxy.openAI(
+    [
+        "model": "gpt-4o-mini",
+        "messages": [
+            [
+                "role": "user",
+                "content": "Say hello."
+            ]
+        ],
+        "max_tokens": 32
+    ],
+    options: RequestOptions(idempotencyKey: "proxy-001")
+)
+
+print(response)
+```
+
+## Common patterns
+
+### Budget enforcement with error handling
+
+Fail closed on budget denials and surface the machine-readable code.
+
+```swift
+import KeelSwift
+
+do {
+    let client = try KeelClient(
+        baseURL: "https://api.keelapi.com",
+        apiKey: ProcessInfo.processInfo.environment["KEEL_API_KEY"]!
+    )
+
+    _ = try await client.executions.create(
+        ExecutionCreateRequest(
+            operation: .generateText,
+            messages: [ExecutionMessage(role: .user, content: "Write a long report.")],
+            routing: ExecutionRoutingInput(provider: .openai, model: "gpt-4o-mini"),
+            parameters: ExecutionParameters(maxOutputTokens: 4000)
+        ),
+        options: RequestOptions(idempotencyKey: "budget-check-001")
+    )
+} catch let error as KeelError {
+    if let apiError = error.apiError,
+       ["budget_exceeded", "daily_budget_exceeded", "monthly_budget_exceeded", "request_cost_exceeded"].contains(apiError.code) {
+        print("budget blocked:", apiError.code)
+    } else {
+        print(error.localizedDescription)
+    }
+}
+```
+
+### Permit-only gating
+
+Check policy first, then skip the provider call if Keel says no.
+
+```python
+from keel_sdk import KeelClient
+
+client = KeelClient(
+    base_url="https://api.keelapi.com",
+    api_key="keel_sk_your_project_key",
+)
+
+permit = client.create_canonical_permit(
+    {
+        "project_id": "00000000-0000-0000-0000-000000000001",
+        "idempotency_key": "gate-001",
+        "subject": {"type": "user", "id": "usr_123"},
+        "action": {"name": "ai.generate.summary"},
+        "resource": {
+            "type": "request",
+            "id": "req_gate_001",
+            "attributes": {
+                "provider": "openai",
+                "model": "gpt-4o-mini",
+                "operation": "generate.text",
+                "modality": "text",
+                "execution_mode": "sync",
+                "estimated_input_tokens": 120,
+                "estimated_output_tokens": 80,
+                "max_output_tokens_requested": 120
+            }
+        }
+    }
+)
+
+if permit["decision"] != "allow":
+    print("blocked:", permit["reason"])
+else:
+    print("safe to call provider")
+
+client.close()
+```
+
+### Async execution with polling
+
+Use jobs when the request must complete outside the request-response lifetime.
+
+```swift
+import KeelSwift
+
+let client = try KeelClient(
+    baseURL: "https://api.keelapi.com",
+    apiKey: ProcessInfo.processInfo.environment["KEEL_API_KEY"]!
+)
+
+let job = try await client.jobs.create(
+    JobSubmitRequest(
+        permit: PermitRequest(
+            projectId: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+            idempotencyKey: "job-001",
+            subject: PermitSubject(type: "user", id: "usr_123"),
+            action: PermitAction(name: "ai.generate"),
+            resource: PermitResource(
+                type: "request",
+                id: "req_async_001",
+                attributes: PermitResourceAttributes(
+                    provider: "openai",
+                    model: "gpt-4o-mini",
+                    operation: .generateVideo,
+                    modality: "video",
+                    executionMode: .asyncMode,
+                    estimatedInputTokens: 32,
+                    estimatedOutputTokens: 0
+                )
+            )
+        ),
+        providerPayload: [
+            "prompt": "A short cinematic sailboat clip at sunrise."
+        ]
+    )
+)
+
+var status = try await client.jobs.get(jobId: job.jobId)
+while status.status == .submitted || status.status == .queued || status.status == .processing {
+    try await Task.sleep(nanoseconds: 2_000_000_000)
+    status = try await client.jobs.get(jobId: job.jobId)
+}
+
+print(status.status)
+```
+
+## Errors
+
+Handle permit denials as data on permit-only flows. Handle execution failures as typed SDK errors.
+
+```swift
+import KeelSwift
+
+let client = try KeelClient(
+    baseURL: "https://api.keelapi.com",
+    apiKey: ProcessInfo.processInfo.environment["KEEL_API_KEY"]!
+)
+
+let permit = try await client.permits.create(
+    PermitRequest(
+        projectId: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+        idempotencyKey: "permit-errors-001",
+        subject: PermitSubject(type: "user", id: "usr_123"),
+        action: PermitAction(name: "ai.generate.summary"),
+        resource: PermitResource(
+            type: "request",
+            id: "req_errors_001",
+            attributes: PermitResourceAttributes(
+                provider: "openai",
+                model: "gpt-4o-mini",
+                operation: .generateText,
+                modality: "text",
+                executionMode: .sync,
+                estimatedInputTokens: 120,
+                estimatedOutputTokens: 80
+            )
+        )
+    )
+)
+
+if permit.decision != .allow {
+    print("permit denied:", permit.reason)
+}
+
+do {
+    _ = try await client.executions.create(
+        ExecutionCreateRequest(
+            operation: .generateText,
+            messages: [ExecutionMessage(role: .user, content: "Hello")],
+            routing: ExecutionRoutingInput(provider: .openai, model: "gpt-4o-mini")
+        ),
+        options: RequestOptions(idempotencyKey: "execution-errors-001")
+    )
+} catch let error as KeelError {
+    switch error {
+    case .policyDenied(let apiError, _):
+        if ["budget_exceeded", "daily_budget_exceeded", "monthly_budget_exceeded", "request_cost_exceeded"].contains(apiError.code) {
+            print("budget exceeded:", apiError.code)
+        } else {
+            print("permit denied:", apiError.message)
+        }
+    case .api(_, let apiError, _):
+        print("generic error:", apiError.code, apiError.message)
+    default:
+        print("generic error:", error.localizedDescription)
+    }
+}
+```
+
+## Auth
+
+### Project API key
+
+Create a project API key in the Keel dashboard for the project that will call the SDK.
+Send it as `Authorization: Bearer <project_api_key>`.
+
+### Provider keys are handled by Keel
+
+For `/v1/execute`, `/v1/executions`, `/v1/proxy/*`, and `/v1/jobs`, Keel uses the provider key stored on that project.
+Your app does not send raw OpenAI, Anthropic, Google, xAI, or Meta keys on these routes.
+
+### Where to get keys
+
+- Create the runtime project API key in the Keel dashboard for your project.
+- Add or rotate provider keys in the same project before the first governed execution.
+- If you use permit-only mode and call the provider yourself, your app still needs its own provider credential for that second step.
+
+## Where to go next
+
+- [Quickstart](/quickstart)
+- [Permits](/permits)
+- [Executions](/executions)
+- [Execute](/execute)
+- [Proxy Execution](/proxy-execution)
+- [Errors](/errors)
