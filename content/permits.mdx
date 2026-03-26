@@ -87,7 +87,7 @@ That default makes onboarding ergonomic, but retries without a client-supplied k
 
 | Field | Required? | Current meaning |
 | --- | --- | --- |
-| `project_id` | Yes | Project that owns the permit request and resulting permit row. |
+| `project_id` | Yes | Project that owns the permit request and resulting permit row. You can find your `project_id` in the Keel dashboard under Project Settings. |
 | `idempotency_key` | No | Client-supplied replay key for safe retries. |
 | `subject` | Yes | Actor the decision applies to. |
 | `action` | Yes | Requested governed action. |
@@ -319,6 +319,32 @@ print(response.json())
     "rule_id": "rule_block_unapproved_models",
     "deny_code": "model_not_allowed"
   }
+}
+```
+
+## Report usage
+
+After an allowed permit completes, report final usage on the permit row:
+
+`POST /v1/permits/{permit_id}/usage`
+
+```bash
+curl -sS -X POST https://api.keelapi.com/v1/permits/permit_01jyf4m3n8q2r6t9v1w5x7y0z/usage \
+  -H "Authorization: Bearer keel_sk_your_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "usage": {
+      "input_tokens": 182,
+      "output_tokens": 247
+    }
+  }'
+```
+
+```json
+{
+  "ok": true,
+  "permit_id": "permit_01jyf4m3n8q2r6t9v1w5x7y0z",
+  "usage_recorded": true
 }
 ```
 

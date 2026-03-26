@@ -24,6 +24,8 @@ Idempotency-Key: exec-001
 
 `/v1/execute` requires a client-scoped project API key.
 
+If `Idempotency-Key` is omitted, the request is treated as a new execution.
+
 If `KEEL_REQUIRE_REQUEST_FRESHNESS=true`, `/v1/execute` also requires:
 
 ```text
@@ -224,6 +226,92 @@ print(response.json())
     "currency": "USD"
   },
   "error": null,
+  "resolved": {
+    "provider": "openai",
+    "model": "gpt-4o-mini"
+  }
+}
+```
+
+## Error response examples
+
+### Denied
+
+```json
+{
+  "id": "exec_01jv1jcm7r4p8t1u3v5w7x9y10",
+  "object": "execution",
+  "created_at": 1719866469,
+  "status": "denied",
+  "status_code": 403,
+  "output": null,
+  "output_assets": [],
+  "routing": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "reason": "explicit"
+  },
+  "governance": {
+    "permit_id": "permit_01jv1jbz9m2q4s6u8w0x1y3z5b",
+    "decision": "deny"
+  },
+  "timing": {
+    "total_ms": 17
+  },
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0
+  },
+  "cost": {
+    "amount": 0,
+    "currency": "USD"
+  },
+  "error": {
+    "code": "policy_denied"
+  },
+  "resolved": {
+    "provider": "openai",
+    "model": "gpt-4o-mini"
+  }
+}
+```
+
+### Failed
+
+```json
+{
+  "id": "exec_01jv1jcm7r4p8t1u3v5w7x9y11",
+  "object": "execution",
+  "created_at": 1719866470,
+  "status": "failed",
+  "status_code": 502,
+  "output": null,
+  "output_assets": [],
+  "routing": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "reason": "explicit"
+  },
+  "governance": {
+    "permit_id": "permit_01jv1jbz9m2q4s6u8w0x1y3z5c",
+    "decision": "allow"
+  },
+  "timing": {
+    "total_ms": 544
+  },
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 0,
+    "total_tokens": 10
+  },
+  "cost": {
+    "amount": 0.000008,
+    "currency": "USD"
+  },
+  "error": {
+    "code": "provider_error"
+  },
   "resolved": {
     "provider": "openai",
     "model": "gpt-4o-mini"
