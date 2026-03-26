@@ -10,10 +10,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico?v=3' },
-      { url: '/favicon.svg?v=3', type: 'image/svg+xml' }
+      { url: '/favicon.ico?v=4' },
+      { url: '/favicon.svg?v=4', type: 'image/svg+xml' }
     ],
-    apple: '/apple-touch-icon.png?v=3'
+    apple: '/apple-touch-icon.png?v=4'
   },
   description:
     'Keel documentation — policy enforcement and execution governance for AI systems.'
