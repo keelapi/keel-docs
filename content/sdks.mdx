@@ -67,7 +67,7 @@ print(response["output"]["content"][0]["text"])
 client.close()
 ```
 
-Execution routes in the Python SDK currently use raw `request()` calls rather than fully typed methods.
+This quickstart uses `/v1/execute` because it accepts a provider-shaped payload directly and requires no schema translation, making it the shortest working path; prefer `/v1/executions` for production work where a provider-neutral request shape is needed. Execution routes in the Python SDK currently use raw `request()` calls rather than fully typed methods.
 
 Expected output:
 

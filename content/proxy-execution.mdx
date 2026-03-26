@@ -118,6 +118,32 @@ response = requests.post(
 print(response.json())
 ```
 
+## Response example
+
+```json
+{
+  "id": "chatcmpl-B9MBs8CjcvOU2jLn4n570S5qMJKcT",
+  "object": "chat.completion",
+  "created": 1764104521,
+  "model": "gpt-4o-mini-2024-07-18",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The text says the team shipped the feature ahead of schedule and will monitor adoption over the next week."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 21,
+    "completion_tokens": 18,
+    "total_tokens": 39
+  }
+}
+```
+
 ## `/v1/executions` vs proxy routes
 
 | Concern | `/v1/executions` | `/v1/proxy/*` |

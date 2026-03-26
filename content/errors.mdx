@@ -67,6 +67,22 @@ On prompt-carrying execution routes, Prompt Firewall V1 uses:
 
 and includes matched-rule metadata in `error.details`.
 
+## Example error response
+
+```json
+{
+  "error": {
+    "code": "daily_budget_exceeded",
+    "message": "Daily budget exceeded for this project.",
+    "details": {
+      "budget_period": "day",
+      "limit_usd": "25.00",
+      "current_usage_usd": "25.73"
+    }
+  }
+}
+```
+
 ## Related pages
 
 - [API Reference](/api-reference)
