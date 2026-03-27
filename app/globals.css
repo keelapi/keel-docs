@@ -137,15 +137,9 @@ pre {
 
 .keel-header-brand__title {
   color: hsl(var(--muted-foreground));
-  font-size: 0.92rem;
-  font-weight: 500;
+  font-size: 1.08rem;
+  font-weight: 400;
   letter-spacing: -0.02em;
-}
-
-.keel-header-brand__separator {
-  color: hsl(var(--muted-foreground));
-  font-size: 0.92rem;
-  font-weight: 500;
 }
 
 .keel-header-brand__link:hover,
@@ -164,7 +158,6 @@ pre {
 
 .keel-header-brand__link,
 .keel-header-brand__wordmark,
-.keel-header-brand__separator,
 .keel-header-brand__title,
 .keel-header-brand__copy {
   white-space: nowrap;

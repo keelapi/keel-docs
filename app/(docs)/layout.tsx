@@ -33,9 +33,6 @@ export default async function DocsLayout({
                 <span className="keel-header-brand__wordmark">Keel</span>
               </a>
               <span className="keel-header-brand__copy">
-                <span className="keel-header-brand__separator" aria-hidden="true">
-                  |
-                </span>
                 <span className="keel-header-brand__title">Docs</span>
               </span>
             </span>
