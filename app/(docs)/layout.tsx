@@ -30,10 +30,13 @@ export default async function DocsLayout({
                   height={19}
                   priority
                 />
-                <span className="keel-header-brand__wordmark">Keel</span>
+                <span className="keel-header-brand__copy">
+                  <span className="keel-header-brand__wordmark">Keel</span>
+                  <span className="keel-header-brand__title">Docs</span>
+                </span>
               </a>
-              <span className="keel-header-brand__copy">
-                <span className="keel-header-brand__title">Docs</span>
+              <span className="sr-only">
+                Keel Docs
               </span>
             </span>
           }
