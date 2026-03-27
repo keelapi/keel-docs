@@ -48,6 +48,8 @@ curl -sS https://api.keelapi.com/v1/executions \
   -H "Authorization: Bearer $KEEL_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: quickstart-exec-001" \
+  -H "X-Keel-Timestamp: $(date +%s)" \
+  -H "X-Keel-Nonce: quickstart-$(uuidgen | tr '[:upper:]' '[:lower:]')" \
   -d '{
     "operation": "generate.text",
     "messages": [
@@ -64,52 +66,109 @@ curl -sS https://api.keelapi.com/v1/executions \
       "max_output_tokens": 16,
       "temperature": 0
     }
-  }'
+  }' | jq
 ```
 
 > Permit creation uses `idempotency_key` in the JSON body, not this header.
+>
+> Hosted runtime requests require freshness headers. `X-Keel-Timestamp` must be current, and `X-Keel-Nonce` must be unique per request.
 
 Example response:
 
 ```json
 {
-  "id": "exec_01jv1je3n6q2r5t8v0w4x7y9z1",
+  "id": "exec_01KMREQ3YWPXCMP5271Y1EX72N",
+  "error": null,
+  "usage": {
+    "metrics": [
+      {
+        "unit": "tokens",
+        "meter": "input_tokens",
+        "metadata": {},
+        "quantity": 13,
+        "estimated": false
+      },
+      {
+        "unit": "tokens",
+        "meter": "output_tokens",
+        "metadata": {},
+        "quantity": 3,
+        "estimated": false
+      }
+    ],
+    "input_tokens": 13,
+    "total_tokens": 16,
+    "output_tokens": 3,
+    "cost_usd_micros": 6,
+    "estimated_final": false
+  },
   "object": "execution",
-  "created_at": 1719866401,
-  "status": "completed",
-  "status_code": 200,
   "output": {
-    "type": "text",
     "content": [
       {
-        "type": "output_text",
-        "text": "keel works"
+        "role": "assistant",
+        "text": "keel works",
+        "type": "text"
       }
     ]
   },
-  "output_assets": [],
-  "routing": {
-    "provider": "openai",
-    "model": "gpt-4o-mini",
-    "reason": "explicit"
-  },
-  "governance": {
-    "permit_id": "permit_01jv1jdym4p7s9u2w5x8y0z1a3",
-    "decision": "allow"
-  },
+  "status": "completed",
   "timing": {
-    "total_ms": 512
+    "started_at": "2026-03-27T20:10:37.570917Z",
+    "duration_ms": 2234.438,
+    "completed_at": "2026-03-27T20:10:39.805355Z"
   },
-  "usage": {
-    "input_tokens": 11,
-    "output_tokens": 2,
-    "total_tokens": 13
+  "routing": {
+    "reason_code": "explicit_request",
+    "selected_model": "gpt-4o-mini-2024-07-18",
+    "requested_model": "gpt-4o-mini",
+    "fallback_occurred": false,
+    "selected_provider": "openai",
+    "requested_provider": "openai"
   },
-  "cost": {
-    "amount": 0.000008,
-    "currency": "USD"
+  "created_at": "2026-03-27T20:10:37.570834Z",
+  "governance": {
+    "reason": "ok",
+    "actions": [
+      {
+        "type": "proceed",
+        "message": "Allowed. Apply constraints."
+      }
+    ],
+    "budgets": {
+      "model": "gpt-4o-mini",
+      "window": "multi",
+      "provider": "openai",
+      "used_tokens": 0,
+      "limit_tokens": 100000,
+      "remaining_tokens": 100000,
+      "mtd_spend_usd_micros": 53,
+      "daily_cost_usd_micros_cap": 10000000,
+      "estimated_cost_usd_micros": 18,
+      "remaining_cost_usd_micros": 99999929,
+      "monthly_cost_usd_micros_cap": 100000000,
+      "request_cost_usd_micros_cap": 250000,
+      "day_to_date_spend_usd_micros": 27,
+      "month_to_date_spend_usd_micros": 53,
+      "remaining_daily_cost_usd_micros": 9999955,
+      "remaining_monthly_cost_usd_micros": 99999929,
+      "remaining_request_cost_usd_micros": 249982,
+      "projected_day_to_date_spend_usd_micros": 45,
+      "projected_month_to_date_spend_usd_micros": 71
+    },
+    "decision": "allow",
+    "constraints": {
+      "allowed_models": [
+        "gpt-4.1",
+        "gpt-4.1-mini",
+        "gpt-4o",
+        "gpt-4o-mini"
+      ],
+      "max_output_tokens": 16
+    }
   },
-  "error": null
+  "status_code": 200,
+  "output_assets": []
 }
 ```
 
