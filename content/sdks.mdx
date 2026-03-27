@@ -5,9 +5,9 @@ description: Install a Keel SDK and send a governed request without switching la
 
 # SDKs
 
-Install a Keel SDK and send a governed request in one primary language.
+Install a Keel SDK and send a governed request in your language of choice.
 
-TypeScript is the primary walkthrough below. Today the documented TypeScript SDK helper is strongest on permit creation, so the execution examples use standard `fetch` in the same language for `/v1/executions`, `/v1/execute`, and `/v1/proxy/*`.
+TypeScript is the primary walkthrough below. Python and Swift cover the same surface — see [Also available](#also-available) at the bottom.
 
 Need the route matrix first? See the [route comparison in Quickstart](/quickstart#route-comparison).
 
@@ -17,9 +17,9 @@ Use the current package names:
 
 | SDK | Install |
 | --- | --- |
-| TypeScript | `npm install @keel/sdk` |
+| TypeScript | `npm install keel-sdk` |
 | Python | `pip install keel-sdk` |
-| Swift | SwiftPM package `https://github.com/sftimeless/keel-swift.git`, product `KeelSwift` |
+| Swift | SwiftPM package `https://github.com/keelapi/keel-swift.git`, product `KeelSwift` |
 
 Every governed SDK call is evaluated against the policies configured for your project. Create the policy in the Keel dashboard before you send the first request.
 
@@ -92,11 +92,11 @@ Permits are the runtime allow or deny decisions Keel returns after evaluating a 
 
 ## Supported SDKs
 
-| SDK | Best for | Current documented surface |
+| SDK | Best for | Surface |
 | --- | --- | --- |
-| TypeScript | Node and TypeScript services that want one language across permit-first and execution routes | Typed `POST /v1/permits` helper plus standard `fetch` examples for `/v1/executions`, `/v1/execute`, and `/v1/proxy/*` |
-| Python | backend services and scripts | Typed `POST /v1/permits` helper plus raw request helpers |
-| Swift | Apple platform apps and services | Typed clients for permits, `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and request timeline |
+| TypeScript | Node and TypeScript services | Typed sub-clients for permits, executions (sync + stream), execute, proxy, jobs, API keys, and request timeline |
+| Python | Backend services and scripts | Same surface as TypeScript with sync and async variants for every method |
+| Swift | Apple platform apps and services | Typed clients for permits, executions (sync + stream), execute, proxy, jobs, API keys, and request timeline |
 
 ## Integration modes
 
@@ -105,14 +105,14 @@ Permits are the runtime allow or deny decisions Keel returns after evaluating a 
 Use this when your app wants decision-first governance and will call the provider itself.
 
 ```ts
-import { KeelClient } from '@keel/sdk'
+import { KeelClient } from 'keel-sdk'
 
 const client = new KeelClient({
   baseUrl: 'https://api.keelapi.com',
   apiKey: process.env.KEEL_API_KEY!
 })
 
-const permit = await client.createPermit({
+const permit = await client.permits.create({
   project_id: process.env.KEEL_PROJECT_ID!,
   idempotency_key: 'permit-only-001',
   subject: { type: 'user', id: 'usr_123' },
@@ -271,14 +271,14 @@ function readExecution(data: any) {
 Check policy first, then skip the provider call if Keel says no.
 
 ```ts
-import { KeelClient } from '@keel/sdk'
+import { KeelClient } from 'keel-sdk'
 
 const client = new KeelClient({
   baseUrl: 'https://api.keelapi.com',
   apiKey: process.env.KEEL_API_KEY!
 })
 
-const permit = await client.createPermit({
+const permit = await client.permits.create({
   project_id: process.env.KEEL_PROJECT_ID!,
   idempotency_key: 'gate-001',
   subject: { type: 'user', id: 'usr_123' },
@@ -345,10 +345,10 @@ function readOpenAIProxy(data: any) {
 
 ## Also available
 
-Python and Swift remain supported for the same route families. Use them when they match your deployment environment better:
+Python and Swift cover the same full surface as the TypeScript SDK. Use them when they match your deployment environment better:
 
-- Python: typed permit helper plus raw request helpers for execution routes
-- Swift: typed clients for permits, `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and request timeline
+- Python: typed sub-clients for permits, executions, execute, proxy, jobs, API keys, and request timeline — with sync and async variants for every method
+- Swift: typed clients for permits, executions (sync + stream), execute, proxy, jobs, API keys, and request timeline
 
 ## Auth
 
