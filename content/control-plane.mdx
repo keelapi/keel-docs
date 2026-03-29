@@ -1,0 +1,226 @@
+---
+title: Control Plane
+description: Model aliases, routing budgets, routing policies, and provider health signals.
+---
+
+# Control Plane
+
+The control plane surfaces let you configure model routing, budget
+constraints, and monitor provider health. All control plane endpoints
+require a dashboard session (not a project API key).
+
+## Model aliases
+
+Model aliases let you define logical names that map to a specific
+provider and model. Aliases can be scoped to an organization or a project.
+
+### List aliases
+
+```
+GET /v1/control-plane/aliases
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `org_id` | `uuid` | Filter by organization (optional). |
+| `project_id` | `uuid` | Filter by project (optional). |
+| `include_inactive` | `bool` | Include deactivated aliases (default: `true`). |
+
+You cannot specify both `org_id` and `project_id` in the same request.
+
+**Response:**
+
+```json
+{
+  "aliases": [
+    {
+      "id": "uuid",
+      "org_id": "uuid | null",
+      "project_id": "uuid | null",
+      "alias": "fast-text",
+      "provider": "openai",
+      "model_id": "gpt-4o-mini",
+      "priority": 0,
+      "is_active": true,
+      "created_at": "2026-03-28T00:00:00Z",
+      "updated_at": "2026-03-28T00:00:00Z"
+    }
+  ]
+}
+```
+
+### Create alias
+
+```
+POST /v1/control-plane/aliases
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `org_id` | `uuid` | One of `org_id` or `project_id` | Organization scope. |
+| `project_id` | `uuid` | One of `org_id` or `project_id` | Project scope. |
+| `alias` | `string` | Yes | Logical name (1–128 chars). |
+| `provider` | `string` | Yes | Provider identifier (1–64 chars). |
+| `model_id` | `string` | Yes | Provider model ID (1–128 chars). |
+| `priority` | `int` | No | Sorting priority (default: `0`). |
+| `is_active` | `bool` | No | Active state (default: `true`). |
+
+Returns `201` with the created alias record.
+
+## Routing budgets
+
+Routing budgets enforce cost constraints on model routing decisions.
+Budgets can operate in three modes: `observe` (log only), `prefer_cheap`
+(prefer lower-cost models), or `enforce` (deny requests exceeding budget).
+
+### List budgets
+
+```
+GET /v1/control-plane/budgets
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `org_id` | `uuid` | Filter by organization (optional). |
+| `project_id` | `uuid` | Filter by project (optional). |
+| `include_inactive` | `bool` | Include deactivated budgets (default: `true`). |
+
+### Create budget
+
+```
+POST /v1/control-plane/budgets
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `org_id` | `uuid` | No | Organization scope. |
+| `project_id` | `uuid` | No | Project scope. |
+| `mode` | `string` | Yes | `observe`, `prefer_cheap`, or `enforce`. |
+| `window_minutes` | `int` | No | Budget window in minutes (default: `1440`). |
+| `max_estimated_cost_usd_micros` | `int` | No | Max estimated cost in USD micros. |
+| `prefer_cheapest` | `bool` | No | Prefer cheapest model (default: `false`). |
+| `is_active` | `bool` | No | Active state (default: `true`). |
+
+### Update budget
+
+```
+PATCH /v1/control-plane/budgets/{budget_id}
+```
+
+All fields from the create body are accepted and optional.
+
+## Budget envelopes
+
+Budget envelopes provide named budget allocations within a project,
+tracking total, reserved, and spent amounts.
+
+### List envelopes
+
+```
+GET /v1/control-plane/budget-envelopes?project_id={project_id}
+```
+
+### Create envelope
+
+```
+POST /v1/control-plane/budget-envelopes
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `project_id` | `uuid` | Yes | Project scope. |
+| `name` | `string` | Yes | Envelope name (1–128 chars). |
+| `total_budget_usd_micros` | `int` | Yes | Total budget in USD micros. |
+| `is_active` | `bool` | No | Active state (default: `true`). |
+
+### Update envelope
+
+```
+PATCH /v1/control-plane/budget-envelopes/{budget_envelope_id}
+```
+
+## Routing policies
+
+Routing policies define ordered rules for how requests are routed to
+specific providers and models based on alias, operation, and priority.
+
+### List routing policies
+
+```
+GET /v1/control-plane/routing-policies
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `org_id` | `uuid` | Filter by organization (optional). |
+| `project_id` | `uuid` | Filter by project (optional). |
+| `include_inactive` | `bool` | Include deactivated policies (default: `true`). |
+
+### Create routing policy
+
+```
+POST /v1/control-plane/routing-policies
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `org_id` | `uuid` | No | Organization scope. |
+| `project_id` | `uuid` | No | Project scope. |
+| `alias` | `string` | Yes | Model alias to route (1–128 chars). |
+| `operation` | `string` | No | Operation filter (e.g., `generate.text`). |
+| `priority_hint` | `string` | No | Priority hint (e.g., `cheap`, `quality`). |
+| `provider` | `string` | Yes | Target provider (1–64 chars). |
+| `model_id` | `string` | Yes | Target model ID (1–128 chars). |
+| `rank` | `int` | No | Evaluation order (default: `0`). |
+| `is_active` | `bool` | No | Active state (default: `true`). |
+
+## Provider health
+
+Monitor real-time provider health signals aggregated across your
+projects.
+
+### List health signals
+
+```
+GET /v1/control-plane/health
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `operation` | `string` | Filter by operation type (optional). |
+
+**Response:**
+
+```json
+{
+  "signals": [
+    {
+      "provider": "openai",
+      "model_id": "gpt-4o",
+      "operation": "generate.text",
+      "window_minutes": 60,
+      "total_requests": 1200,
+      "successful_requests": 1195,
+      "failed_requests": 5,
+      "success_rate": 0.996,
+      "last_success_at": "2026-03-28T12:00:00Z",
+      "last_failure_at": "2026-03-28T11:45:00Z",
+      "updated_at": "2026-03-28T12:00:00Z"
+    }
+  ]
+}
+```
+
+### Get signal for a specific provider and model
+
+```
+GET /v1/control-plane/health/{provider}/{model_id}
+```
+
+## Authorization
+
+All control plane endpoints require a dashboard session. Mutations
+(create, update) require:
+
+- **Organization-scoped:** Owner or Admin role in the organization.
+- **Project-scoped:** `PROJECT_WRITE` permission on the project.

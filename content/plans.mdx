@@ -1,0 +1,64 @@
+---
+title: Plans & Entitlements
+description: Keel plan tiers, included entitlements, and feature gating.
+---
+
+# Plans & Entitlements
+
+Keel uses a four-tier plan system. Each plan determines project limits,
+log retention, included governed requests, and access to advanced features.
+
+## Plan tiers
+
+| | Starter | Growth | Business | Enterprise |
+| --- | --- | --- | --- | --- |
+| Project limit | 1 | 5 | Unlimited | Unlimited |
+| Log retention | 7 days | 30 days | 90 days | 90 days |
+| Included governed requests | 1,000 | 100,000 | 1,000,000 | 5,000,000 |
+| Overage billing | No | No | Yes | No |
+| Self-serve checkout | No | Yes | Yes | No |
+| Billing portal | No | Yes | Yes | No |
+| Stripe metering | No | No | Yes | Yes |
+| Organization dashboard | No | No | No | Yes |
+| Teams | No | No | No | Yes |
+| Sales-led | No | No | No | Yes |
+
+## Plan aliases
+
+Some older references use legacy plan names. The API normalizes them
+automatically:
+
+| Legacy name | Canonical tier |
+| --- | --- |
+| `free` | `starter` |
+| `pro` | `growth` |
+| `builder` | `growth` |
+| `team` | `business` |
+| `scale` | `business` |
+
+When interacting with the API, always use the canonical tier name.
+Legacy aliases are accepted but may be removed in a future version.
+
+## Feature gating
+
+Plan-gated features return a `403` with an `access` block describing the
+required plan when the caller's tier is insufficient. Features currently
+gated by plan:
+
+- **Cost forecasting** (`GET /v1/projects/{project_id}/cost-forecast`) — requires Growth or higher.
+- **Prompt analytics** (`GET /v1/projects/{project_id}/prompt-analytics`) — requires Growth or higher.
+- **Organization dashboard** — requires Enterprise.
+- **Teams** — requires Enterprise.
+
+## Checking your plan
+
+The session exchange response (`POST /v1/auth/supabase/exchange`) includes
+the caller's current plan tier and entitlements:
+
+```json
+{
+  "plan": "growth",
+  "project_limit": 5,
+  "log_retention_days": 30
+}
+```

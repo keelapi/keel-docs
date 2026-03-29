@@ -1,0 +1,99 @@
+---
+title: Cost Forecasting & Prompt Analytics
+description: Project-level spend forecasting and prompt usage analytics.
+---
+
+# Cost Forecasting & Prompt Analytics
+
+Keel provides two project-level analytics surfaces that help you
+understand and predict AI spend. Both require the Growth plan or higher.
+
+## Cost forecasting
+
+The cost forecast endpoint projects your month-end spend based on
+recent usage patterns.
+
+```
+GET /v1/projects/{project_id}/cost-forecast
+```
+
+**Authentication:** User JWT (project owner).
+
+**Response:**
+
+```json
+{
+  "project_id": "uuid",
+  "access": {
+    "allowed": true,
+    "required_plan": "growth"
+  },
+  "window": {
+    "period": "2026-03",
+    "period_start": "2026-03-01T00:00:00Z",
+    "period_end": "2026-03-31T23:59:59Z",
+    "as_of": "2026-03-28T12:00:00Z",
+    "recent_window_start": "2026-03-21T00:00:00Z",
+    "recent_window_end": "2026-03-28T12:00:00Z",
+    "recent_window_days": 7,
+    "recent_window_days_with_reported_spend": 7
+  },
+  "actual_spend_usd": 142.50,
+  "average_daily_spend_usd": 5.09,
+  "projected_month_end_spend_usd": 157.79,
+  "monthly_cap_usd": 500.00,
+  "forecast_status": "on_track",
+  "forecast_confidence": 0.85,
+  "assumptions": [
+    "Based on 7-day trailing average",
+    "All 7 recent days had reported spend"
+  ]
+}
+```
+
+### Forecast fields
+
+| Field | Description |
+| --- | --- |
+| `actual_spend_usd` | Total spend so far in the current billing period. |
+| `average_daily_spend_usd` | Average daily spend over the recent window. |
+| `projected_month_end_spend_usd` | Projected total by period end. |
+| `monthly_cap_usd` | Monthly budget cap if configured, otherwise `null`. |
+| `forecast_status` | Status indicator (e.g., `on_track`, `over_budget`). |
+| `forecast_confidence` | Confidence score (0–1) based on data completeness. |
+| `assumptions` | Human-readable list of forecast assumptions. |
+
+### Plan gating
+
+If the caller's plan does not meet the minimum requirement, the endpoint
+returns `403` with an `access` block:
+
+```json
+{
+  "access": {
+    "allowed": false,
+    "required_plan": "growth"
+  }
+}
+```
+
+## Prompt analytics
+
+The prompt analytics endpoint provides aggregated insights into prompt
+usage patterns within a project.
+
+```
+GET /v1/projects/{project_id}/prompt-analytics
+```
+
+**Authentication:** User JWT (project owner).
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `window` | `string` | Time window for analytics (default: `7d`). |
+
+**Plan requirement:** Growth or higher.
+
+Prompt analytics surfaces usage rollups for the selected time window,
+giving visibility into how prompts are being used across your project's
+governed requests.

@@ -1,0 +1,178 @@
+---
+title: Organizations & Teams
+description: Multi-user organization management, team scoping, and role-based access control.
+---
+
+# Organizations & Teams
+
+Organizations provide multi-user access control for Keel projects.
+Teams (available on Enterprise plans) add a second grouping layer
+within an organization for project isolation.
+
+## Organization model
+
+An organization groups users and projects under shared governance.
+Each organization has a plan tier that determines feature access and
+entitlements.
+
+### Create organization
+
+```
+POST /v1/organizations
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Yes | Organization name (1–255 chars). |
+| `slug` | `string` | No | URL-friendly identifier (1–128 chars, auto-generated if omitted). |
+| `plan` | `string` | No | Plan tier (default: `starter`). Self-serve creation is limited to the `starter` plan. |
+
+Returns `201` with the organization record including `id`, `name`, `slug`,
+`plan`, `is_active`, and feature flags (`can_use_organization_dashboard`,
+`can_use_teams`).
+
+### Get organization
+
+```
+GET /v1/organizations/{org_id}
+```
+
+Requires the caller to be a member with at least `PROJECT_READ` permission.
+Only available when the organization's plan supports the organization dashboard.
+
+### Update organization
+
+```
+PATCH /v1/organizations/{org_id}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | Updated name. |
+| `plan` | `string` | Updated plan tier. |
+| `is_active` | `bool` | Active state. |
+
+Requires `ORG_MANAGE` permission.
+
+## Members
+
+### List members
+
+```
+GET /v1/organizations/{org_id}/members
+```
+
+Returns all members with their `user_id`, `role`, and `created_at`.
+
+### Add member
+
+```
+POST /v1/organizations/{org_id}/members
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `user_id` | `uuid` | Yes | User to add. |
+| `role` | `string` | Yes | Member role. |
+
+### Update member role
+
+```
+PATCH /v1/organizations/{org_id}/members/{user_id}
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `role` | `string` | Yes | New role. |
+
+### Remove member
+
+```
+DELETE /v1/organizations/{org_id}/members/{user_id}
+```
+
+Returns `204 No Content`.
+
+### Revoke member sessions
+
+```
+POST /v1/organizations/{org_id}/members/{user_id}/sessions/revoke
+```
+
+Immediately invalidates all active dashboard sessions for the specified
+member. Returns the count of revoked sessions.
+
+## Teams
+
+Teams are available on Enterprise plans only. They provide a sub-grouping
+within an organization for project isolation and delegation.
+
+### List teams
+
+```
+GET /v1/organizations/{org_id}/teams
+```
+
+Requires `PROJECT_READ` permission and the `ORG_FEATURE_TEAMS` entitlement.
+
+### Create team
+
+```
+POST /v1/organizations/{org_id}/teams
+```
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Yes | Team name (1–255 chars). |
+| `slug` | `string` | No | URL-friendly identifier (1–128 chars). |
+
+Requires `TEAM_MANAGE` permission and the `ORG_FEATURE_TEAMS` entitlement.
+
+## Organization projects
+
+### List projects
+
+```
+GET /v1/organizations/{org_id}/projects
+```
+
+Returns all projects belonging to the organization.
+
+### Transfer project to team
+
+```
+POST /v1/organizations/{org_id}/projects/{project_id}/transfer
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `team_id` | `uuid` | Target team (optional — omit to unassign from current team). |
+
+Requires `PROJECT_WRITE` permission.
+
+## Dashboard organization views
+
+The dashboard surfaces provide aggregated views tailored for the
+organization management UI.
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /v1/dashboard/organizations` | List organizations the caller belongs to, with member and project counts. |
+| `GET /v1/dashboard/organizations/{org_id}/summary` | Organization summary with 30-day governed request and spend totals. |
+| `GET /v1/dashboard/organizations/{org_id}/members` | Member list with email, role, and invitation status. |
+| `GET /v1/dashboard/organizations/{org_id}/projects` | Project list with 30-day usage and spend per project. |
+| `GET /v1/dashboard/organizations/{org_id}/usage-summary` | Aggregated 30-day usage and spend across all org projects. |
+
+## Authorization
+
+All organization endpoints require a dashboard session. Specific
+permission requirements:
+
+| Action | Required permission |
+| --- | --- |
+| View organization | `PROJECT_READ` + org dashboard entitlement |
+| Manage organization settings | `ORG_MANAGE` |
+| Manage members | `ORG_MANAGE` |
+| View teams | `PROJECT_READ` + `ORG_FEATURE_TEAMS` |
+| Create teams | `TEAM_MANAGE` + `ORG_FEATURE_TEAMS` |
+| Manage projects | `PROJECT_WRITE` |
