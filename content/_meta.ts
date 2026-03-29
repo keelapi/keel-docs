@@ -26,6 +26,14 @@ const meta = {
   'system-overview': 'System Overview',
   'platform-surfaces': 'Platform Surfaces',
   'execution-spine': 'Execution Spine',
+  platformSection: {
+    type: 'separator',
+    title: 'Platform'
+  },
+  plans: 'Plans & Entitlements',
+  organizations: 'Organizations & Teams',
+  'control-plane': 'Control Plane',
+  'cost-forecasting': 'Cost Forecasting & Analytics',
   securitySection: {
     type: 'separator',
     title: 'Trust & Security'

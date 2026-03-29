@@ -103,6 +103,126 @@
       "notes": "Fetch one compliance export record."
     },
     {
+      "method": "GET",
+      "path": "/v1/control-plane/aliases",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "List model aliases",
+      "deprecated": false,
+      "notes": "List model aliases scoped to an organization or project."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/control-plane/aliases",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Create model alias",
+      "deprecated": false,
+      "notes": "Create a model alias mapping a logical name to a provider and model."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/control-plane/budget-envelopes",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "List budget envelopes",
+      "deprecated": false,
+      "notes": "List named budget envelopes for a project."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/control-plane/budget-envelopes",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Create budget envelope",
+      "deprecated": false,
+      "notes": "Create a named budget envelope for a project."
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/control-plane/budget-envelopes/{budget_envelope_id}",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Update budget envelope",
+      "deprecated": false,
+      "notes": "Update a budget envelope."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/control-plane/budgets",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "List routing budgets",
+      "deprecated": false,
+      "notes": "List routing budgets scoped to an organization or project."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/control-plane/budgets",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Create routing budget",
+      "deprecated": false,
+      "notes": "Create a routing budget with observe, prefer_cheap, or enforce mode."
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/control-plane/budgets/{budget_id}",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Update routing budget",
+      "deprecated": false,
+      "notes": "Update routing budget configuration."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/control-plane/health",
+      "family": "status",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "List provider health signals",
+      "deprecated": false,
+      "notes": "Aggregated provider health signals across projects."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/control-plane/health/{provider}/{model_id}",
+      "family": "status",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Get provider health signal",
+      "deprecated": false,
+      "notes": "Health signal for a specific provider and model."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/control-plane/routing-policies",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "List routing policies",
+      "deprecated": false,
+      "notes": "List routing policies scoped to an organization or project."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/control-plane/routing-policies",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Create routing policy",
+      "deprecated": false,
+      "notes": "Create a routing policy with alias, operation, priority, and rank."
+    },
+    {
       "method": "POST",
       "path": "/v1/execute",
       "family": "execution",
@@ -191,6 +311,106 @@
       "summary": "Delete governance subscription",
       "deprecated": false,
       "notes": "Delete a governance event subscription."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/organizations",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Create organization",
+      "deprecated": false,
+      "notes": "Create an organization. Self-serve limited to starter plan."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations/{org_id}",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Get organization",
+      "deprecated": false,
+      "notes": "Get organization details. Requires org dashboard entitlement."
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/organizations/{org_id}",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Update organization",
+      "deprecated": false,
+      "notes": "Update organization settings. Requires ORG_MANAGE permission."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations/{org_id}/members",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "List organization members",
+      "deprecated": false,
+      "notes": "List members of an organization."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/organizations/{org_id}/members",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Add organization member",
+      "deprecated": false,
+      "notes": "Add a member to an organization."
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/organizations/{org_id}/members/{user_id}",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Update member role",
+      "deprecated": false,
+      "notes": "Update an organization member's role."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/organizations/{org_id}/members/{user_id}",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Remove organization member",
+      "deprecated": false,
+      "notes": "Remove a member from an organization."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations/{org_id}/projects",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "List organization projects",
+      "deprecated": false,
+      "notes": "List projects belonging to an organization."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations/{org_id}/teams",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "List teams",
+      "deprecated": false,
+      "notes": "List teams within an organization. Requires Enterprise plan."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/organizations/{org_id}/teams",
+      "family": "management",
+      "exposure": "official",
+      "auth": "dashboard_session",
+      "summary": "Create team",
+      "deprecated": false,
+      "notes": "Create a team within an organization. Requires Enterprise plan."
     },
     {
       "method": "GET",

@@ -33,7 +33,9 @@ Use this page as the mounted-surface map for beta:
 | Proxy execution | Limited | Capability coverage differs by provider. Public routing exists only on OpenAI and Anthropic. Public streaming is effectively limited to the current OpenAI path. |
 | Async jobs and lifecycle replay | Stable | Public async job submission, status, and request timeline replay are mounted. |
 | Governance events and compliance exports | Stable | Public project-scoped readback and export surfaces are mounted. |
-| Dashboard and control-plane surfaces | Internal only | Operator- and UI-focused surfaces, not canonical public runtime APIs. |
+| Control plane | Stable | Model alias, routing budget, routing policy, and provider health surfaces. Dashboard-session authenticated. |
+| Dashboard and management surfaces | Internal only | Operator- and UI-focused surfaces, not canonical public runtime APIs. |
+| Organization and team management | Stable | Organization, member, and team management surfaces. Dashboard-session authenticated. Enterprise plan required for teams. |
 | Realtime session transport | Internal only | Persistence scaffolding exists, but there is no public session-start route. |
 
 ## Canonical public
@@ -108,6 +110,44 @@ Use this page as the mounted-surface map for beta:
 | `GET /v1/providers/health/public` and `GET /v1/providers/diagnostics/public` | Public provider-status diagnostics. |
 | `POST /v1/billing/stripe/webhook` | Mounted without a FastAPI auth dependency, but protected by inline Stripe signature validation. |
 
+## Control plane
+
+| Route | Notes |
+| --- | --- |
+| `GET /v1/control-plane/aliases` | List model aliases. Filterable by org or project scope. |
+| `POST /v1/control-plane/aliases` | Create a model alias. Requires org or project scope. |
+| `GET /v1/control-plane/budgets` | List routing budgets. |
+| `POST /v1/control-plane/budgets` | Create a routing budget with `observe`, `prefer_cheap`, or `enforce` mode. |
+| `PATCH /v1/control-plane/budgets/{budget_id}` | Update a routing budget. |
+| `GET /v1/control-plane/budget-envelopes` | List budget envelopes for a project. |
+| `POST /v1/control-plane/budget-envelopes` | Create a named budget envelope. |
+| `PATCH /v1/control-plane/budget-envelopes/{budget_envelope_id}` | Update a budget envelope. |
+| `GET /v1/control-plane/routing-policies` | List routing policies. |
+| `POST /v1/control-plane/routing-policies` | Create a routing policy with alias, operation, and rank. |
+| `GET /v1/control-plane/health` | List provider health signals. |
+| `GET /v1/control-plane/health/{provider}/{model_id}` | Get health signal for a specific provider and model. |
+
+See [Control Plane](/control-plane) for full request and response details.
+
+## Organization and team management
+
+| Route | Notes |
+| --- | --- |
+| `POST /v1/organizations` | Create an organization. Self-serve limited to `starter` plan. |
+| `GET /v1/organizations/{org_id}` | Get organization details. Requires org dashboard entitlement. |
+| `PATCH /v1/organizations/{org_id}` | Update organization. Requires `ORG_MANAGE`. |
+| `GET /v1/organizations/{org_id}/members` | List organization members. |
+| `POST /v1/organizations/{org_id}/members` | Add a member to the organization. |
+| `PATCH /v1/organizations/{org_id}/members/{user_id}` | Update member role. |
+| `DELETE /v1/organizations/{org_id}/members/{user_id}` | Remove a member. |
+| `POST /v1/organizations/{org_id}/members/{user_id}/sessions/revoke` | Revoke all sessions for a member. |
+| `GET /v1/organizations/{org_id}/teams` | List teams. Requires Enterprise plan. |
+| `POST /v1/organizations/{org_id}/teams` | Create a team. Requires Enterprise plan. |
+| `GET /v1/organizations/{org_id}/projects` | List organization projects. |
+| `POST /v1/organizations/{org_id}/projects/{project_id}/transfer` | Transfer project to a team. |
+
+See [Organizations & Teams](/organizations) for full request and response details.
+
 ## Internal and operator
 
 | Route or primitive | Notes |
@@ -115,11 +155,10 @@ Use this page as the mounted-surface map for beta:
 | `GET /v1/auth/session` | Dashboard-session inspection route. |
 | `GET /v1/whoami` | Dashboard-session identity helper. |
 | `POST /v1/dry-run` | Dashboard-session helper route. |
-| `POST /v1/organizations` and `/v1/organizations/{org_id}/*` | Dashboard-session and org-membership protected operator and org-management surfaces. |
 | `POST /v1/dashboard/projects/{project_id}/gateway/*` | Dashboard gateway helpers. |
 | `GET /v1/dashboard/observability/*` | Dashboard-session observability surfaces. Operator and UI focused, not public runtime APIs. |
 | `/v1/dashboard/projects/*` | Dashboard-session project, provider-key, runtime-key, execution, usage, policy, and health-management surfaces. |
-| `/v1/control-plane/*` | Dashboard-session control-plane alias, budget, health, and routing-policy surfaces. |
+| `/v1/dashboard/organizations/*` | Dashboard-session organization views with aggregated usage and member details. |
 | `RealtimeSessionService` | Persisted realtime-session scaffolding exists, but there is no public session-start route today. |
 | `ExecutionService`, provider adapters, provider-key resolution, and default fallback chain | Internal implementation details shared by `/v1/executions`, `/v1/execute`, `/v1/proxy/*`, async jobs, and dashboard gateway test execution. |
 
